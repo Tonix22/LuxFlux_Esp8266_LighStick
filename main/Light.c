@@ -16,16 +16,16 @@
 #include "esp_log.h"
 #include "esp_system.h"
 #include "IO_driver.h"
-#include "wifi_connect_to_AP.h"
 
-
+#include "wifi.h"
 void app_main(void)
 {
     printf("app_main\r\n");
-    Output_LED_config();
-    Input_LED_config();
-    Thread_safety_GPIO_config();
-    wifi_init_sta();
+    //Output_LED_config();
+    //Input_LED_config();
+    //Thread_safety_GPIO_config();
+    //wifi_init_sta();
+    wifi_init_softap();
     for(;;)
     {
         vTaskDelay(1000 / portTICK_RATE_MS);
