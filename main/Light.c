@@ -7,25 +7,22 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 #include <stdio.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/queue.h"
-#include "esp_system.h"
-#include "esp_spi_flash.h"
-#include "driver/gpio.h"
-#include "esp_log.h"
+#include "FreeRTOS_wrapper.h"
 #include "esp_system.h"
 #include "IO_driver.h"
-
+#include "neopixel.h"
 #include "wifi.h"
 void app_main(void)
 {
+    esp_set_cpu_freq(ESP_CPU_FREQ_160M);
+    vTaskDelay(1000 / portTICK_RATE_MS);
     printf("app_main\r\n");
-    //Output_LED_config();
+    Output_LED_config();
+    Color_Frame(0,0xAA,0);
     //Input_LED_config();
     //Thread_safety_GPIO_config();
     //wifi_init_sta();
-    wifi_init_softap();
+    //wifi_init_softap();
     for(;;)
     {
         vTaskDelay(1000 / portTICK_RATE_MS);
