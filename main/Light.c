@@ -18,14 +18,15 @@ void app_main(void)
     vTaskDelay(1000 / portTICK_RATE_MS);
     printf("app_main\r\n");
     Output_LED_config();
-    Color_Frame(0,0xAA,0);
+    
     //Input_LED_config();
     //Thread_safety_GPIO_config();
     //wifi_init_sta();
     //wifi_init_softap();
+
     for(;;)
     {
-        vTaskDelay(1000 / portTICK_RATE_MS);
+        Pixel_rainbow();
     }
     
 }
