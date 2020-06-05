@@ -10,7 +10,7 @@
 #include "FreeRTOS_wrapper.h"
 #include "esp_system.h"
 #include "IO_driver.h"
-#include "neopixel.h"
+#include "Light_effects.h"
 #include "wifi.h"
 void app_main(void)
 {
@@ -19,14 +19,21 @@ void app_main(void)
     printf("app_main\r\n");
     Output_LED_config();
     
-    //Input_LED_config();
+    Input_LED_config();
     //Thread_safety_GPIO_config();
     //wifi_init_sta();
     //wifi_init_softap();
 
     for(;;)
     {
-        Pixel_rainbow();
+        vTaskDelay(100/ portTICK_RATE_MS);
+        //for(int i=0;i<8;i++)
+        //{
+        //    Color_Frame(255,0,0);
+        //}
+        //Pixel_rainbow();
+        //Flash_color(255,255,255,100);
+        Fade_color();
     }
     
 }

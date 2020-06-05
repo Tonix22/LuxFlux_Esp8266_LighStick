@@ -46,7 +46,7 @@ void Input_LED_config(void)
 {
     gpio_config_t io_conf;
     //interrupt of rising edge
-    io_conf.intr_type = GPIO_INTR_POSEDGE;
+    io_conf.intr_type = GPIO_INTR_NEGEDGE;
     //bit mask of the pins, use GPIO0 here
     io_conf.pin_bit_mask = (1<<0);
     //set as input mode
