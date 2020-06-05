@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "esp_system.h"
 #include "Light_effects.h"
 #include "FreeRTOS_wrapper.h"
@@ -7,6 +8,69 @@ uint8_t rainbow_delay = 10;
 uint8_t pixels        = 8;
 int flash_times       = 1000;
 int fade_cycles       = 1000;
+
+xQueueHandle Light_event = NULL;
+
+static TimerHandle_t hold_next_sound;
+static bool sound_released = true;
+void sound_action (TimerHandle_t xTimer );
+
+void Light_task(void *arg)
+{
+    Light_event = xQueueCreate(10, sizeof(uint32_t));
+    hold_next_sound = xTimerCreate("Sound", 100/ portTICK_RATE_MS, pdFALSE, 0, sound_action);
+    MessageID msg;
+    printf("light_stask init\r\n");
+    for(;;)
+    {
+        if (xQueueReceive(Light_event, &msg, portMAX_DELAY))
+        {
+            if(msg == SOUND && sound_released == true)
+            {
+                sound_released = false;
+                xTimerStart(hold_next_sound, 0 );
+            }
+        }
+    }
+}
+
+void Ligth_init(void)
+{
+    xTaskCreate(Light_task, "Light_task", 2048, NULL, 10, NULL);
+}
+
+
+void sound_action (TimerHandle_t xTimer )
+{
+    static char toggle = 0;
+    toggle^=1;
+    static bool frame = 0;
+    if(toggle)
+    {
+        for(int i=0 ; i < pixels ; i++)
+        {
+            Color_Frame(0,0,0);
+        }
+    }
+    else
+    {
+        for(int i=0 ; i < pixels ; i++)
+        {
+            if(frame)
+            {
+                 Color_Frame(255,128,0);
+            }
+            else
+            {
+                Color_Frame(255,0,0);
+            }
+            
+        }
+        frame^=1;
+    }
+    sound_released = true;
+}
+
 
 void Fade_color(void)
 {
@@ -112,5 +176,6 @@ void Pixel_rainbow(void)
         }
     }
 }
+
 
 

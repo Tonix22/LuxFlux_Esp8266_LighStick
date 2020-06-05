@@ -17,10 +17,11 @@ void app_main(void)
     esp_set_cpu_freq(ESP_CPU_FREQ_160M);
     vTaskDelay(1000 / portTICK_RATE_MS);
     printf("app_main\r\n");
+    Ligth_init();
+
     Output_LED_config();
-    
-    Input_LED_config();
-    //Thread_safety_GPIO_config();
+    input_IO_config();
+    input_IO_enable_isr();
     //wifi_init_sta();
     //wifi_init_softap();
 
@@ -33,7 +34,7 @@ void app_main(void)
         //}
         //Pixel_rainbow();
         //Flash_color(255,255,255,100);
-        Fade_color();
+        //Fade_color();
     }
     
 }
