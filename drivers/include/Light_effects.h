@@ -13,6 +13,7 @@ typedef enum
     ENABLE_SOUND,
     SOUND,
     IMU,
+    FADE,
     WIFI_CMD,
 }MessageID;
 
