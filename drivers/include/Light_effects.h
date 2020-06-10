@@ -29,12 +29,13 @@ void Ligth_init(void);
 void Pixel_rainbow(void);
 void Flash_color(uint8_t R, uint8_t G, uint8_t B, int ms_rate);
 void Fade_color(void);
-
+void Pixel_rainbow_Fade(void);
 
 
 
 #ifdef __cplusplus
 #include "neopixel.h"
+#include "IO_driver.h"
 #include <vector>
 class Light
 {
@@ -49,9 +50,20 @@ class Light
 
     std::vector<RGB> Fade_colors
     {
-        {255,0  , 0},
-        {255,128, 0},
-        {255,180, 0},
+        {255, 0  , 0},
+        {255, 128, 0},
+    };
+
+    std::vector<RGB> Pixel_Rainbow
+    {
+        {255, 0,   0  },
+        {255, 165, 0  },
+        {255, 255, 0  },
+        {0,   128, 0  },
+        {28,  188, 196},
+        {0,   0,   255},
+        {75,  0,   130},
+        {238, 130, 238},
     };
 
     void Fill_Led_stick(uint8_t R,uint8_t G,uint8_t B)
@@ -67,6 +79,10 @@ class Light
         {
             Color_Frame(LED.RED, LED.GREEN,LED.BLUE);
         }
+    }
+    void Paint_LED(RGB& LED)
+    {
+        Color_Frame(LED.RED, LED.GREEN,LED.BLUE);
     }
     void Led_stick_off(void)
     {

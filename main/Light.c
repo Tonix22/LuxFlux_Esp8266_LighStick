@@ -25,7 +25,7 @@ void app_main(void)
 
     Output_LED_config();
     input_IO_config();
-    //input_IO_enable_isr();
+    input_IO_enable_isr();
 
 
     //wifi_init_sta();
@@ -40,7 +40,8 @@ void app_main(void)
         //}
         //Pixel_rainbow();
         //Flash_color(255,255,255,100);
-        Fade_color();
+        //Fade_color();
+        //Pixel_rainbow_Fade();
     }
     
 }

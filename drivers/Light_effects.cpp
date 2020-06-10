@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <vector>
+#include <algorithm> 
 #include "esp_system.h"
 #include "Light_effects.h"
 #include "FreeRTOS_wrapper.h"
-
 
 
 Light LedStick;
@@ -26,6 +26,7 @@ void Light_task(void *arg)
         {
             if(msg == SOUND && sound_released == true)
             {
+                input_IO_disable_isr();
                 sound_released = false;
                 xTimerStart(hold_next_sound, 0 );
             }
@@ -61,33 +62,30 @@ void sound_action (TimerHandle_t xTimer )
         frame^=1;
     }
     sound_released = true;
+    input_IO_enable_isr();
 }
 
 
 void Fade_color(void)
 {
-    uint8_t leds_num = 0;
-    bool orange = false;
-    auto it = LedStick.Fade_colors.begin();
-    while(1)
-    {
-        leds_num++;
+    static uint8_t leds_num = 0;
+    static auto it = LedStick.Fade_colors.begin();
+    leds_num++;
 
-        for(int j=0; j < leds_num ;j++)
-        {
-            Color_Frame((*it).RED,(*it).GREEN,(*it).BLUE);
-        }
-        if(leds_num == LedStick.pixels)
-        {
-            leds_num = 0;
-            it++;
-            if(it == LedStick.Fade_colors.end())
-            {
-                it = LedStick.Fade_colors.begin();
-            }
-        }
-        vTaskDelay(80/ portTICK_RATE_MS);
+    for(int j=0; j < leds_num ;j++)
+    {
+        LedStick.Paint_LED(*it);
     }
+    if(leds_num == LedStick.pixels)
+    {
+        leds_num = 0;
+        it++;
+        if(it == LedStick.Fade_colors.end())
+        {
+            it = LedStick.Fade_colors.begin();
+        }
+    }
+    vTaskDelay(60/ portTICK_RATE_MS);
 }
 
 void Flash_color(uint8_t R, uint8_t G, uint8_t B, int ms_rate)
@@ -101,6 +99,27 @@ void Flash_color(uint8_t R, uint8_t G, uint8_t B, int ms_rate)
     vTaskDelay(ms_rate/ portTICK_RATE_MS); 
 }
 
+void Pixel_rainbow_Fade(void)
+{
+    static uint8_t leds_num = 0;
+    auto it = LedStick.Pixel_Rainbow.begin() + leds_num;
+    leds_num++;
+    for(int i = 0; i < leds_num; i++, it--)
+    {
+        LedStick.Paint_LED(*it);
+    }
+    if(leds_num == LedStick.pixels)
+    {
+        std::rotate(LedStick.Pixel_Rainbow.begin(),LedStick.Pixel_Rainbow.begin()+1,LedStick.Pixel_Rainbow.end());
+        vTaskDelay(80/ portTICK_RATE_MS);
+        for(int i = 0; i < leds_num; i++, it--)
+        {
+            LedStick.Paint_LED(*it);
+        }
+        leds_num = 0;
+    }
+    vTaskDelay(80/ portTICK_RATE_MS);
+}
 
 void Pixel_rainbow(void)
 {
