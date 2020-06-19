@@ -39,7 +39,7 @@ void app_main(void)
         //{
         //    Color_Frame(255,0,0);
         //}
-        //Pixel_rainbow();
+        Pixel_rainbow();
         //Flash_color(255,255,255,100);
         //Fade_color();
         //Pixel_rainbow_Fade();
