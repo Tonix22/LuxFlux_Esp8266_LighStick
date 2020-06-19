@@ -291,7 +291,7 @@ F 3 "" H 5150 1400 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	4350 1550 4850 1550
+	4350 1550 4700 1550
 $Comp
 L power:GND #PWR?
 U 1 1 5EED4411
@@ -313,4 +313,53 @@ Wire Wire Line
 	4750 2000 4750 3350
 Wire Wire Line
 	4750 3350 4900 3350
+$Comp
+L LED:NeoPixel_THT D?
+U 1 1 5EED76D3
+P 6150 1400
+F 0 "D?" H 6494 1446 50  0000 L CNN
+F 1 "NeoPixel_THT" H 6494 1355 50  0000 L CNN
+F 2 "" H 6200 1100 50  0001 L TNN
+F 3 "https://www.adafruit.com/product/1938" H 6250 1025 50  0001 L TNN
+	1    6150 1400
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6150 1100 4700 1100
+Wire Wire Line
+	4700 1100 4700 1550
+Connection ~ 4700 1550
+Wire Wire Line
+	4700 1550 4850 1550
+$Comp
+L power:GND #PWR?
+U 1 1 5EED96E6
+P 4850 1750
+F 0 "#PWR?" H 4850 1500 50  0001 C CNN
+F 1 "GND" V 4855 1622 50  0000 R CNN
+F 2 "" H 4850 1750 50  0001 C CNN
+F 3 "" H 4850 1750 50  0001 C CNN
+	1    4850 1750
+	0    1    1    0   
+$EndComp
+Connection ~ 4850 1750
+$Comp
+L power:GND #PWR?
+U 1 1 5EED9B42
+P 6150 1700
+F 0 "#PWR?" H 6150 1450 50  0001 C CNN
+F 1 "GND" H 6155 1527 50  0000 C CNN
+F 2 "" H 6150 1700 50  0001 C CNN
+F 3 "" H 6150 1700 50  0001 C CNN
+	1    6150 1700
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5850 1400 5850 2200
+Wire Wire Line
+	5850 2200 4700 2200
+Wire Wire Line
+	4700 2200 4700 3450
+Wire Wire Line
+	4700 3450 4900 3450
 $EndSCHEMATC

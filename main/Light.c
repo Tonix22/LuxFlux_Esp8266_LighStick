@@ -12,6 +12,7 @@
 #include "IO_driver.h"
 #include "Light_effects.h"
 #include "wifi.h"
+#include "imu6050.h"
 
 extern xQueueHandle Light_event;
 
@@ -21,12 +22,12 @@ void app_main(void)
     esp_set_cpu_freq(ESP_CPU_FREQ_160M);
     vTaskDelay(1000 / portTICK_RATE_MS);
     printf("app_main\r\n");
-    Ligth_init();
 
     Output_LED_config();
     input_IO_config();
-    input_IO_enable_isr();
-
+    //input_IO_enable_isr();
+    Ligth_init();
+    imu_init();
 
     //wifi_init_sta();
     //wifi_init_softap();
