@@ -32,6 +32,7 @@ void app_main(void)
 
     //wifi_init_sta();
     //wifi_init_softap();
+    Thread_safety_GPIO_config();
 
     for(;;)
     {
@@ -44,6 +45,7 @@ void app_main(void)
         //Flash_color(255,255,255,100);
         //Fade_color();
         //Pixel_rainbow_Fade();
+        
     }
     
 }
