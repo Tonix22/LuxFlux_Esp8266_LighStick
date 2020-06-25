@@ -163,17 +163,6 @@ F 3 "" H 6600 3250 50  0001 C CNN
 	1    6600 3250
 	0    1    1    0   
 $EndComp
-$Comp
-L Connector:AudioJack2_SwitchT J2
-U 1 1 5EEB712D
-P 2000 2250
-F 0 "J2" H 2032 2575 50  0000 C CNN
-F 1 "AudioJack2_SwitchT" H 2032 2484 50  0000 C CNN
-F 2 "TerminalBlock:TerminalBlock_Altech_AK300-3_P5.00mm" H 2000 2250 50  0001 C CNN
-F 3 "~" H 2000 2250 50  0001 C CNN
-	1    2000 2250
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	2700 3600 2700 2250
 Wire Wire Line
@@ -265,7 +254,7 @@ U 1 1 5EECC20A
 P 1250 2450
 F 0 "J1" H 1168 2125 50  0000 C CNN
 F 1 "Screw_Terminal_01x02" H 1168 2216 50  0000 C CNN
-F 2 "TerminalBlock:TerminalBlock_bornier-3_P5.08mm" H 1250 2450 50  0001 C CNN
+F 2 "TerminalBlock:TerminalBlock_bornier-2_P5.08mm" H 1250 2450 50  0001 C CNN
 F 3 "~" H 1250 2450 50  0001 C CNN
 	1    1250 2450
 	-1   0    0    1   
@@ -313,17 +302,6 @@ Wire Wire Line
 	4750 2000 4750 3350
 Wire Wire Line
 	4750 3350 4900 3350
-$Comp
-L LED:NeoPixel_THT D1
-U 1 1 5EED76D3
-P 6150 1400
-F 0 "D1" H 6494 1446 50  0000 L CNN
-F 1 "NeoPixel_THT" H 6494 1355 50  0000 L CNN
-F 2 "LightProyect:Neopixel" H 6200 1100 50  0001 L TNN
-F 3 "https://www.adafruit.com/product/1938" H 6250 1025 50  0001 L TNN
-	1    6150 1400
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	6150 1100 4700 1100
 Wire Wire Line
@@ -362,4 +340,37 @@ Wire Wire Line
 	4700 2200 4700 3450
 Wire Wire Line
 	4700 3450 4900 3450
+$Comp
+L power:GND #PWR08
+U 1 1 5EF010D0
+P 2200 2350
+F 0 "#PWR08" H 2200 2100 50  0001 C CNN
+F 1 "GND" H 2205 2177 50  0000 C CNN
+F 2 "" H 2200 2350 50  0001 C CNN
+F 3 "" H 2200 2350 50  0001 C CNN
+	1    2200 2350
+	1    0    0    -1  
+$EndComp
+$Comp
+L neopixel_custom:NeoPixel_THT D1
+U 1 1 5EF06E3B
+P 6150 1400
+F 0 "D1" H 6380 1446 50  0000 L CNN
+F 1 "NeoPixel_THT" H 6380 1355 50  0000 L CNN
+F 2 "LightProyect:Neopixel" H 6200 1100 50  0001 L TNN
+F 3 "https://www.adafruit.com/product/1938" H 6250 1025 50  0001 L TNN
+	1    6150 1400
+	1    0    0    -1  
+$EndComp
+$Comp
+L ONOFF:AudioJack2_SwitchT J?
+U 1 1 5EF4A436
+P 2000 2250
+F 0 "J?" H 2032 2575 50  0000 C CNN
+F 1 "AudioJack2_SwitchT" H 2032 2484 50  0000 C CNN
+F 2 "" H 2000 2250 50  0001 C CNN
+F 3 "~" H 2000 2250 50  0001 C CNN
+	1    2000 2250
+	1    0    0    -1  
+$EndComp
 $EndSCHEMATC
