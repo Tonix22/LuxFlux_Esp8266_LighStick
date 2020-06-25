@@ -14,9 +14,15 @@ static xQueueHandle gpio_evt_queue = NULL;
 
 static void gpio_isr_handler(void *arg)
 {
-    //uint32_t gpio_num = (uint32_t) arg;
-    MessageID send = SOUND;
-    xQueueSendFromISR(Light_event, &send, NULL);
+    uint32_t gpio_num = (uint32_t) arg;
+    if(gpio_num == GPIO_SDD2){
+        MessageID send = SOUND;
+        xQueueSendFromISR(Light_event, &send, NULL);
+    }else{
+        xQueueSendFromISR(gpio_evt_queue, &gpio_num, NULL);
+    }
+    
+    
 }
 
 static void gpio_task_example(void *arg)
@@ -49,6 +55,7 @@ void Output_LED_config(void)
     //configure GPIO with the given settings
     gpio_config(&io_conf);
 }
+
 void input_IO_config(void)
 {
     gpio_config_t io_conf;
@@ -62,20 +69,29 @@ void input_IO_config(void)
     io_conf.pull_up_en = 1;
     gpio_config(&io_conf);
 
-    
-}
-void input_IO_enable_isr(void)
-{   
     //change gpio intrrupt type for one pin
-    gpio_set_intr_type(GPIO_D3, GPIO_INTR_NEGEDGE);
+    gpio_set_intr_type(GPIO_D3, GPIO_INTR_NEGEDGE);//TODO cambiar a RISING EDGE :)
     //install gpio isr service
     gpio_install_isr_service(0);
     gpio_isr_handler_add(GPIO_D3, gpio_isr_handler, (void *) 0);
+    
 }
+
+
+void input_IO_enable_isr(void)
+{   
+    //change gpio intrrupt type for one pin
+    gpio_set_intr_type(GPIO_SDD2, GPIO_INTR_NEGEDGE);
+
+    gpio_isr_handler_add(GPIO_SDD2, gpio_isr_handler, (void *) 0);
+}
+
 void input_IO_disable_isr(void)
 {
-    gpio_uninstall_isr_service();
+    gpio_isr_handler_remove(GPIO_SDD2);
+    
 }
+
 void Thread_safety_GPIO_config(void)
 {
     //create a queue to handle gpio event from isr
