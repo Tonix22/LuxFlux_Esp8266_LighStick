@@ -13,6 +13,7 @@
 #include "Light_effects.h"
 #include "wifi.h"
 #include "imu6050.h"
+#include "neopixel.h"
 
 extern xQueueHandle Light_event;
 
@@ -25,24 +26,26 @@ void app_main(void)
 
     Output_LED_config();
     input_IO_config();
-    //input_IO_enable_isr();
+    input_IO_enable_isr();
     Ligth_init();
-    imu_init();
+   // imu_init();
 
     //wifi_init_sta();
     //wifi_init_softap();
+    Thread_safety_GPIO_config();
 
     for(;;)
     {
         vTaskDelay(100/ portTICK_RATE_MS);
-        //for(int i=0;i<8;i++)
-        //{
-        //    Color_Frame(255,0,0);
-        //}
+        for(int i=0;i<8;i++)
+        {
+            Color_Frame(255,0,0);
+        }
         //Pixel_rainbow();
         //Flash_color(255,255,255,100);
         //Fade_color();
         //Pixel_rainbow_Fade();
+        
     }
     
 }
