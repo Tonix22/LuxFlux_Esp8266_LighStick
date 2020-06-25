@@ -3,6 +3,7 @@
 #include "esp_system.h"
 #include "IO_driver.h"
 #include "Light_effects.h"
+#include "imu6050.h"
 
 extern xQueueHandle Light_event;
 

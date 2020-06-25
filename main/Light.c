@@ -15,14 +15,20 @@
 #include "imu6050.h"
 #include "neopixel.h"
 
+
 extern xQueueHandle Light_event;
+extern xQueueHandle imu_event;
 
 void app_main(void)
 {
-    MessageID test = FADE;
+    //MessageID test = FADE;
     esp_set_cpu_freq(ESP_CPU_FREQ_160M);
     vTaskDelay(1000 / portTICK_RATE_MS);
     printf("app_main\r\n");
+  
+    imu_init();
+    Ligth_init();
+
 
     Output_LED_config();
     input_IO_config();
@@ -37,10 +43,6 @@ void app_main(void)
     for(;;)
     {
         vTaskDelay(100/ portTICK_RATE_MS);
-        for(int i=0;i<8;i++)
-        {
-            Color_Frame(255,0,0);
-        }
         //Pixel_rainbow();
         //Flash_color(255,255,255,100);
         //Fade_color();

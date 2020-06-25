@@ -21,9 +21,15 @@
 #include "esp_err.h"
 
 #include "driver/i2c.h"
+#include "IO_driver.h"
+#include "Light_effects.h"
+#include "imu6050.h"
 
 
 static const char *TAG = "main";
+extern xQueueHandle Light_event;
+xQueueHandle imu_event = NULL;
+//xQueueHandle imu_event = NULL;
 
 /**
  * TEST CODE BRIEF
@@ -98,9 +104,9 @@ static esp_err_t i2c_example_master_init()
     int i2c_master_port = I2C_EXAMPLE_MASTER_NUM;
     i2c_config_t conf;
     conf.mode = I2C_MODE_MASTER;
-    conf.sda_io_num = I2C_EXAMPLE_MASTER_SDA_IO;
+    conf.sda_io_num = GPIO_D5_SDA;
     conf.sda_pullup_en = 1;
-    conf.scl_io_num = I2C_EXAMPLE_MASTER_SCL_IO;
+    conf.scl_io_num = GPIO_D4_SCL;
     conf.scl_pullup_en = 1;
     conf.clk_stretch_tick = 300; // 300 ticks, Clock stretch is about 210us, you can make changes according to the actual situation.
     ESP_ERROR_CHECK(i2c_driver_install(i2c_master_port, conf.mode));
@@ -228,6 +234,7 @@ static void i2c_task_example(void *arg)
     i2c_example_master_mpu6050_init(I2C_EXAMPLE_MASTER_NUM);
 
     while (1) {
+
         who_am_i = 0;
         i2c_example_master_mpu6050_read(I2C_EXAMPLE_MASTER_NUM, WHO_AM_I, &who_am_i, 1);
 
@@ -264,8 +271,52 @@ static void i2c_task_example(void *arg)
     i2c_driver_delete(I2C_EXAMPLE_MASTER_NUM);
 }
 
+void imu_task(void *arg)
+{
+    imu_event = xQueueCreate(10, sizeof(uint32_t));
+    MessageID msg;
+    imu_msgID imu_msg;
+
+    printf("imu init calib\r\n");
+    for(;;)
+    {
+        for(int cnt = 0; cnt < 70; cnt++){
+            msg = CALIBRATION;
+            if(!(xQueueSend(Light_event, &msg, 0)))
+            {
+                printf(" message failed 1 ");
+            }
+            else
+            {   
+                printf(" calibrating... ");
+                vTaskDelay(10/ portTICK_RATE_MS);
+            }
+        }
+        if(xQueueReceive(imu_event, &imu_msg, portMAX_DELAY))
+        {
+            for(int cnt = 0; cnt < 30; cnt++){
+                if(imu_msg == IMU_CAL)
+                {
+                    msg = END_CALIBRATION;
+                if(!(xQueueSend(Light_event, &msg, 0)))
+                    {
+                    printf(" message failed 2");
+                    }
+                else
+                    {
+                    printf(" CALIB END");
+                    vTaskDelay(500/ portTICK_RATE_MS);
+                    }       
+            }
+            }
+        }
+        vTaskDelay(100/ portTICK_RATE_MS);
+    }
+}
+
 void imu_init(void)
 {
     //start i2c task
-    xTaskCreate(i2c_task_example, "i2c_task_example", 2048, NULL, 10, NULL);
+    xTaskCreate(imu_task, "imu_task", 2048, NULL, 10, NULL);
 }
+
