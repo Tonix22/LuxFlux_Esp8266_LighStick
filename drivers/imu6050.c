@@ -277,10 +277,11 @@ void imu_task(void *arg)
     MessageID msg;
     imu_msgID imu_msg;
 
-    printf("imu init calib\r\n");
+    printf("imu init calibration\r\n");
     for(;;)
     {
-        for(int cnt = 0; cnt < 70; cnt++){
+        for(int cnt = 0; cnt < 70; cnt++)
+        {
             msg = CALIBRATION;
             if(!(xQueueSend(Light_event, &msg, 0)))
             {
@@ -288,28 +289,22 @@ void imu_task(void *arg)
             }
             else
             {   
-                printf(" calibrating... ");
+                printf(" calibrating: %d\r\n", cnt);
                 vTaskDelay(10/ portTICK_RATE_MS);
             }
+            xQueueReceive(imu_event, &imu_msg, portMAX_DELAY);
         }
-        if(xQueueReceive(imu_event, &imu_msg, portMAX_DELAY))
+        msg = END_CALIBRATION;
+        if(!(xQueueSend(Light_event, &msg, 0)))
         {
-            for(int cnt = 0; cnt < 30; cnt++){
-                if(imu_msg == IMU_CAL)
-                {
-                    msg = END_CALIBRATION;
-                if(!(xQueueSend(Light_event, &msg, 0)))
-                    {
-                    printf(" message failed 2");
-                    }
-                else
-                    {
-                    printf(" CALIB END");
-                    vTaskDelay(500/ portTICK_RATE_MS);
-                    }       
-            }
-            }
+            printf(" message failed 2");
         }
+        else
+        {
+            printf(" CALIB END\r\n");
+            vTaskDelay(500/ portTICK_RATE_MS);
+        }
+        xQueueReceive(imu_event, &imu_msg, portMAX_DELAY);
         vTaskDelay(100/ portTICK_RATE_MS);
     }
 }
