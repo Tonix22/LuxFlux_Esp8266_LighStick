@@ -22,6 +22,8 @@ typedef enum
     IMU,
     FADE,
     WIFI_CMD,
+    CALIBRATION,
+    END_CALIBRATION,
 }MessageID;
 
 void Light_task(void *arg);
@@ -29,6 +31,7 @@ void Ligth_init(void);
 void Pixel_rainbow(void);
 void Flash_color(uint8_t R, uint8_t G, uint8_t B, int ms_rate);
 void Fade_color(void);
+void Fade_colorG(void);
 void Pixel_rainbow_Fade(void);
 
 
@@ -52,6 +55,12 @@ class Light
     {
         {255, 0  , 0},
         {255, 128, 0},
+    };
+
+    std::vector<RGB> Fade_colorsG
+    {
+        {0, 0  , 0},
+        {0, 255, 0},
     };
 
     std::vector<RGB> Pixel_Rainbow

@@ -4,11 +4,13 @@
 #include "esp_system.h"
 #include "Light_effects.h"
 #include "FreeRTOS_wrapper.h"
-
+#include "imu6050.h"
 
 Light LedStick;
 
 xQueueHandle Light_event = NULL;
+extern xQueueHandle imu_event;
+
 
 static TimerHandle_t hold_next_sound;
 static bool sound_released = true;
@@ -19,7 +21,8 @@ void Light_task(void *arg)
     Light_event = xQueueCreate(10, sizeof(uint32_t));
     hold_next_sound = xTimerCreate("Sound", 100/ portTICK_RATE_MS, pdFALSE, 0, sound_action);
     MessageID msg;
-    printf("light_stask init\r\n");
+    imu_msgID imu_msg;
+    printf("light_task init\r\n");
     for(;;)
     {
         if (xQueueReceive(Light_event, &msg, portMAX_DELAY))
@@ -30,6 +33,21 @@ void Light_task(void *arg)
                 sound_released = false;
                 xTimerStart(hold_next_sound, 0 );
             }
+            if(msg == CALIBRATION)
+            {
+                Fade_color();
+                imu_msg = IMU_CAL;
+                vTaskDelay(50/ portTICK_RATE_MS);
+                xQueueSend(imu_event, &imu_msg, 10/ portTICK_RATE_MS);
+            }
+            if(msg == END_CALIBRATION)
+            {
+                Fade_colorG();
+                imu_msg = IMU_END_CAL;
+                vTaskDelay(50/ portTICK_RATE_MS);
+                xQueueSend(imu_event, &imu_msg, 10/ portTICK_RATE_MS);
+            }
+            vTaskDelay(50/ portTICK_RATE_MS);
         }
     }
 }
@@ -83,6 +101,28 @@ void Fade_color(void)
         if(it == LedStick.Fade_colors.end())
         {
             it = LedStick.Fade_colors.begin();
+        }
+    }
+    vTaskDelay(60/ portTICK_RATE_MS);
+}
+
+void Fade_colorG(void)
+{
+    static uint8_t leds_num = 0;
+    static auto it = LedStick.Fade_colorsG.begin();
+    leds_num++;
+
+    for(int j=0; j < leds_num ;j++)
+    {
+        LedStick.Paint_LED(*it);
+    }
+    if(leds_num == LedStick.pixels)
+    {
+        leds_num = 0;
+        it++;
+        if(it == LedStick.Fade_colorsG.end())
+        {
+            it = LedStick.Fade_colorsG.begin();
         }
     }
     vTaskDelay(60/ portTICK_RATE_MS);
