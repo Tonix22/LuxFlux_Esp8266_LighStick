@@ -22,6 +22,7 @@ void Light_task(void *arg)
     hold_next_sound = xTimerCreate("Sound", 100/ portTICK_RATE_MS, pdFALSE, 0, sound_action);
     MessageID msg;
     imu_msgID imu_msg;
+    bool Calibrating = false;
     printf("light_task init\r\n");
     for(;;)
     {
@@ -35,6 +36,12 @@ void Light_task(void *arg)
             }
             if(msg == CALIBRATION)
             {
+                if(Calibrating == false)
+                {   
+                    Calibrating = true;
+                    LedStick.Fade_colors[0] = {255, 0  , 0};
+                    LedStick.Fade_colors[1] = {255, 128, 0};
+                }
                 Fade_color();
                 imu_msg = IMU_CAL;
                 vTaskDelay(50/ portTICK_RATE_MS);
@@ -42,7 +49,13 @@ void Light_task(void *arg)
             }
             if(msg == END_CALIBRATION)
             {
-                Fade_colorG();
+                if(Calibrating == true)
+                {
+                    Calibrating = false;
+                    LedStick.Fade_colors[0] = {0, 0  , 0};
+                    LedStick.Fade_colors[1] = {0, 255, 0};
+                }
+                Fade_color();
                 imu_msg = IMU_END_CAL;
                 vTaskDelay(50/ portTICK_RATE_MS);
                 xQueueSend(imu_event, &imu_msg, 10/ portTICK_RATE_MS);
@@ -90,39 +103,17 @@ void Fade_color(void)
     static auto it = LedStick.Fade_colors.begin();
     leds_num++;
 
-    for(int j=0; j < leds_num ;j++)
+    for(int j=0; j < leds_num ;j++)//paint ledstick
     {
         LedStick.Paint_LED(*it);
     }
-    if(leds_num == LedStick.pixels)
+    if(leds_num == LedStick.pixels) // change color
     {
         leds_num = 0;
-        it++;
+        it++;//next color
         if(it == LedStick.Fade_colors.end())
         {
             it = LedStick.Fade_colors.begin();
-        }
-    }
-    vTaskDelay(60/ portTICK_RATE_MS);
-}
-
-void Fade_colorG(void)
-{
-    static uint8_t leds_num = 0;
-    static auto it = LedStick.Fade_colorsG.begin();
-    leds_num++;
-
-    for(int j=0; j < leds_num ;j++)
-    {
-        LedStick.Paint_LED(*it);
-    }
-    if(leds_num == LedStick.pixels)
-    {
-        leds_num = 0;
-        it++;
-        if(it == LedStick.Fade_colorsG.end())
-        {
-            it = LedStick.Fade_colorsG.begin();
         }
     }
     vTaskDelay(60/ portTICK_RATE_MS);

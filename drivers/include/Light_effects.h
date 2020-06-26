@@ -57,12 +57,6 @@ class Light
         {255, 128, 0},
     };
 
-    std::vector<RGB> Fade_colorsG
-    {
-        {0, 0  , 0},
-        {0, 255, 0},
-    };
-
     std::vector<RGB> Pixel_Rainbow
     {
         {255, 0,   0  },
