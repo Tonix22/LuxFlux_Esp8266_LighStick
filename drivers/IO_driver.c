@@ -4,6 +4,7 @@
 #include "IO_driver.h"
 #include "Light_effects.h"
 #include "imu6050.h"
+#include "Menu.h"
 
 extern xQueueHandle Light_event;
 
@@ -32,6 +33,7 @@ static void gpio_task_example(void *arg)
     for (;;) {
         if (xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
             ESP_LOGI(TAG, "GPIO[%d] intr, val: %d\n", io_num, gpio_get_level(io_num));
+            Menu();
             //cnt^=1;
             //gpio_set_level(16, cnt);
         }
