@@ -1,24 +1,13 @@
 #include <iostream>
 #include "Menu.h"
-
 using namespace std;
 
-Node* Rooth = NULL;
-Node* END   = NULL; // helper pointer
-Node* aux   = NULL;
+ DispMenu Menu;
 
-Node menu[ARRAYSIZE] = {{idle_func,&(menu[RITH])},
-                        {rith_func,&(menu[CIRC])},
-                        {circ_func,&(menu[LEVEL])},
-                        {leve_func,&(menu[WIFI])}, 
-                        {wifi_func,&(menu[SYNC])},
-                        {sync_func,&(menu[IDLE])},
-
-                       };
+//class declaration
 
 
-Node* curr_screen = &(menu[IDLE]);
-
+// functions
 void idle_func(){
     cout<<"idle_func"<<endl;
 }
@@ -45,11 +34,17 @@ void sync_func(){
 
 
 
-void Menu()
+void Menu_func()
 {
+    /* 
+    This is a way to acces menu directly by index, 
+    used to branch to a specific menu function. 
+    For example when a button is pressed by 3
+    seconds, the fucntion call will be directly like this.
+    */
+    //Menu[SYNC];// Acces directly to function
     
-    curr_screen->foo();
-    curr_screen++;
-
-    
+    Menu(); // Jump to function like this
+    Menu++; // Incremt position like this
+       
 }
