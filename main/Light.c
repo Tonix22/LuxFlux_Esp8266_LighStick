@@ -26,21 +26,26 @@ void app_main(void)
     vTaskDelay(1000 / portTICK_RATE_MS);
     printf("app_main\r\n");
   
-    Ligth_init();
-    imu_init();
+    //Ligth_init();
+    //imu_init();
 
 
-    Output_LED_config();
+    //Output_LED_config();
     //input_IO_config();
     //input_IO_enable_isr();
 
-    //wifi_init_sta();
-    //wifi_init_softap();
+
+    //wifi_general_cfg();
+
     //Thread_safety_GPIO_config();
 
     for(;;)
     {
-        vTaskDelay(10000/ portTICK_RATE_MS);
+        //WIFI_OFF();
+        vTaskDelay(5000/ portTICK_RATE_MS);
+        //WIFI_ON();
+        //vTaskDelay(5000/ portTICK_RATE_MS);
+
         //Pixel_rainbow();
         //Flash_color(255,255,255,100);
         //Fade_color();
