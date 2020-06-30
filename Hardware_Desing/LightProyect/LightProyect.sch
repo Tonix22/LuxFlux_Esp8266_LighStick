@@ -72,7 +72,7 @@ Wire Wire Line
 	2700 3600 2900 3600
 Connection ~ 3400 3600
 $Comp
-L DC_DC_3_5_V_Module:DC_DC_3_5_module M2
+L LightProyect-rescue:DC_DC_3_5_module-DC_DC_3_5_V_Module M2
 U 1 1 5EE9F569
 P 3800 1450
 F 0 "M2" H 3912 1815 50  0000 C CNN
@@ -83,7 +83,7 @@ F 3 "" H 3900 1800 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L VoltageRegulator_X_3.3:Regulator_x_3_3 M1
+L LightProyect-rescue:Regulator_x_3_3-VoltageRegulator_X_3.3 M1
 U 1 1 5EEA2C27
 P 3700 2350
 F 0 "M1" H 3837 2765 50  0000 C CNN
@@ -130,7 +130,7 @@ Wire Wire Line
 	3150 1800 3150 2250
 Connection ~ 4350 3600
 $Comp
-L MPU6050_compressed:MPU6050_lite M4
+L LightProyect-rescue:MPU6050_lite-MPU6050_compressed M4
 U 1 1 5EEA9A03
 P 6900 3150
 F 0 "M4" H 7178 3071 50  0000 L CNN
@@ -269,7 +269,7 @@ Wire Wire Line
 Wire Wire Line
 	1450 3600 2700 3600
 $Comp
-L AudioModule:AudioModule M3
+L LightProyect-rescue:AudioModule-AudioModule M3
 U 1 1 5EED2E37
 P 5150 1400
 F 0 "M3" H 5428 1221 50  0000 L CNN
@@ -352,7 +352,7 @@ F 3 "" H 2200 2350 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L neopixel_custom:NeoPixel_THT D1
+L LightProyect-rescue:NeoPixel_THT-neopixel_custom D1
 U 1 1 5EF06E3B
 P 6150 1400
 F 0 "D1" H 6380 1446 50  0000 L CNN
@@ -363,12 +363,12 @@ F 3 "https://www.adafruit.com/product/1938" H 6250 1025 50  0001 L TNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L ONOFF:AudioJack2_SwitchT J?
+L LightProyect-rescue:AudioJack2_SwitchT-ONOFF J2
 U 1 1 5EF4A436
 P 2000 2250
-F 0 "J?" H 2032 2575 50  0000 C CNN
+F 0 "J2" H 2032 2575 50  0000 C CNN
 F 1 "AudioJack2_SwitchT" H 2032 2484 50  0000 C CNN
-F 2 "" H 2000 2250 50  0001 C CNN
+F 2 "TerminalBlock:TerminalBlock_bornier-3_P5.08mm" H 2000 2250 50  0001 C CNN
 F 3 "~" H 2000 2250 50  0001 C CNN
 	1    2000 2250
 	1    0    0    -1  
