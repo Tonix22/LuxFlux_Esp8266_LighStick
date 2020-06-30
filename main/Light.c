@@ -33,7 +33,7 @@ void app_main(void)
 
     //Output_LED_config();
     input_IO_config();
-    input_IO_enable_isr();
+    //input_IO_enable_isr();
 
     //wifi_init_sta();
     //wifi_init_softap();

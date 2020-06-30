@@ -21,7 +21,7 @@
 
 void Output_LED_config(void);
 void input_IO_config(void);
-void input_IO_disable_isr(void);
-void input_IO_enable_isr(void);
+void input_IO_disable_isr(uint32_t GPIO);
+void input_IO_enable_isr(uint32_t GPIO,int EDGE);
 void Thread_safety_GPIO_config(void);
 #endif

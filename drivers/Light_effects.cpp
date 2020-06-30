@@ -30,7 +30,7 @@ void Light_task(void *arg)
         {
             if(msg == SOUND && sound_released == true)
             {
-                input_IO_disable_isr();
+                input_IO_disable_isr(GPIO_SDD2);
                 sound_released = false;
                 xTimerStart(hold_next_sound, 0 );
             }
@@ -93,7 +93,7 @@ void sound_action (TimerHandle_t xTimer )
         frame^=1;
     }
     sound_released = true;
-    input_IO_enable_isr();
+    input_IO_enable_isr(GPIO_SDD2, GPIO_INTR_NEGEDGE);
 }
 
 

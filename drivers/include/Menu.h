@@ -1,7 +1,7 @@
 #ifndef MENU_H
 #define MENU_H
 
-
+#include "FreeRTOS_wrapper.h"
 
 
 #ifdef __cplusplus
@@ -11,6 +11,7 @@ extern "C" {
 
 
 void Menu_func();
+void sync_action(TimerHandle_t xTimer );
 
 #ifdef __cplusplus
 

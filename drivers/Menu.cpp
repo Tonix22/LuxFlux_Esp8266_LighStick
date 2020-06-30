@@ -1,8 +1,13 @@
 #include <iostream>
 #include "Menu.h"
+#include "FreeRTOS_wrapper.h"
+#include "driver/gpio.h"
+
 using namespace std;
 
  DispMenu Menu;
+ gpio_num_t io_num;
+ int pressed = 0;
 
 //class declaration
 
@@ -32,7 +37,13 @@ void sync_func(){
     cout<<"sync_func"<<endl;
 }
 
+void sync_action (TimerHandle_t xTimer )
+{
+        
+        Menu[SYNC];
+        Menu++;
 
+}
 
 void Menu_func()
 {
