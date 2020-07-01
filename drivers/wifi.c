@@ -110,7 +110,7 @@ void wifi_general_cfg(void)
     wifi_init_softap();
     wifi_init_sta();
 
-    #if CHANGE_DCHP // change in production
+    #ifdef CHANGE_DCHP // change in production
         tcpip_adapter_ip_info_t val;
         tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP,&val);
         ESP_LOGI(TAG, "old dhcp:%s", ip4addr_ntoa(&val.ip));

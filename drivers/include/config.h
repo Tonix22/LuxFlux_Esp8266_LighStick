@@ -1,8 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define RIGHT_STICK (0)
-#define LEFT_STICK  (1)
+#define RIGHT_STICK (1)
+#define LEFT_STICK  (0)
 
 #define DEVELOMENT  (1) //GPIO adapat to DEV board
 #define RELEASE     (0) // change on GPIO definition
