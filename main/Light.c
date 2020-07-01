@@ -37,15 +37,16 @@ void app_main(void)
     //wifi_init_sta();
     //wifi_init_softap();
     //Thread_safety_GPIO_config();
-
+    xTaskCreate(imu_calib_light, "imu_task", 1024, NULL, 10, NULL);
+    
     for(;;)
     {
-        vTaskDelay(10000/ portTICK_RATE_MS);
+        vTaskDelay(5000/ portTICK_RATE_MS);
+
         //Pixel_rainbow();
         //Flash_color(255,255,255,100);
         //Fade_color();
         //Pixel_rainbow_Fade();
-        
     }
     
 }
