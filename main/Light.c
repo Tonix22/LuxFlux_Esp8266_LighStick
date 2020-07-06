@@ -23,36 +23,34 @@ extern xQueueHandle imu_cntrl_queue;
 
 void app_main(void)
 {
-    //Light_MessageID test = FADE;
     esp_set_cpu_freq(ESP_CPU_FREQ_160M);
-    vTaskDelay(1000 / portTICK_RATE_MS);
-    printf("app_main\r\n");
-  
+    printf("Light test Debug\r\n");
+    //IO config
+    Output_LED_config();
+    input_IO_config();
+    Thread_safety_GPIO_config();
+    //Task
     Ligth_init();
     imu_init();
+    // wifi
+    wifi_general_cfg();
 
-
-    //Output_LED_config();
-    //input_IO_config();
-    //input_IO_enable_isr();
-
-
-    //wifi_general_cfg();
-
-    //Thread_safety_GPIO_config();
+    #if IMU_TEST
     IMU_msgID msg = IMU_START_CALIBRATION;
     vTaskDelay(1000/ portTICK_RATE_MS);
-
     xQueueSend(imu_cntrl_queue, &msg, 10/ portTICK_RATE_MS);
+    #endif
 
     for(;;)
     {
         //WIFI_OFF();
         vTaskDelay(5000/ portTICK_RATE_MS);
+        #if PIXEL_TEST
+        Pixel_rainbow();
+        #endif
         //WIFI_ON();
         //vTaskDelay(5000/ portTICK_RATE_MS);
 
-        //Pixel_rainbow();
         //Flash_color(255,255,255,100);
         //Fade_color();
         //Pixel_rainbow_Fade();

@@ -65,6 +65,8 @@ void Light_task(void *arg)
                 break;
             case OFF:
                 LedStick.Led_stick_off();
+                vTaskDelay(10/ portTICK_RATE_MS);
+                LedStick.Led_stick_off();
             default:
                 break;
             }

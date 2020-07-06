@@ -19,13 +19,13 @@ static TimerHandle_t sync_timer;
 static void gpio_isr_handler(void *arg)
 {
     uint32_t gpio_num = (uint32_t) arg;
-    if(gpio_num == GPIO_SDD2){
+    if(gpio_num == GPIO_SDD2)
+    {
         Light_MessageID send = SOUND;
         xQueueSendFromISR(Light_event, &send, NULL);
     }
     
     xQueueSendFromISR(gpio_evt_queue, &gpio_num, NULL);
-
 }
 
 static void gpio_menu_task(void *arg)
@@ -33,12 +33,11 @@ static void gpio_menu_task(void *arg)
     uint32_t io_num;
     
     //int cnt =0;
-     sync_timer = xTimerCreate("Sync", 3000/ portTICK_RATE_MS, pdFALSE, 0, sync_action);
+    sync_timer = xTimerCreate("Sync", 3000/ portTICK_RATE_MS, pdFALSE, 0, sync_action);
     for (;;) {
         if (xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
             
-            ESP_LOGI(TAG, "GPIO[%d] intr, val: %d\n", io_num, gpio_get_level(io_num));
-            
+            //ESP_LOGI(TAG, "GPIO[%d] intr, val: %d\n", io_num, gpio_get_level(io_num));
 
             input_IO_disable_isr(GPIO_D3);          
             vTaskDelay(100/ portTICK_RATE_MS);
@@ -53,9 +52,6 @@ static void gpio_menu_task(void *arg)
                 Timer1Started = xTimerStop(sync_timer,0);
                // printf("BOTON RELEASED\n");
             }
-            //cnt^=1;
-            //gpio_set_level(16, cnt);
-            //
         }
     }
 }
@@ -113,7 +109,6 @@ void input_IO_disable_isr(uint32_t GPIO)
     gpio_isr_handler_remove(GPIO);
     
 }
-
 
 
 void Thread_safety_GPIO_config(void)

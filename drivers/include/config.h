@@ -7,6 +7,9 @@
 #define DEVELOMENT  (1) //GPIO adapat to DEV board
 #define RELEASE     (0) // change on GPIO definition
 
+#define IMU_TEST    (0)
+
+#define PIXEL_TEST  (0)
 
 #define AP_PASS      "DiaboloSticks"
 #define MAX_STA_CONN       4
