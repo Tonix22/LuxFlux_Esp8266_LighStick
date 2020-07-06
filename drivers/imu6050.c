@@ -27,7 +27,7 @@
 
 
 
-static const char *TAG = "main";
+//static const char *TAG = "main";
 extern xQueueHandle Light_event;
 xQueueHandle imu_event = NULL;
 uint32_t P = 0;
@@ -40,6 +40,10 @@ MeasureBits RAW;
 MeasureBits Offset;
 
 char sensor_log[7][20] = {{"Acel x: "},{"Acel y: "},{"Acel z: "},{"TEMP: "},{"Gyro x: "},{"Gyro y: "},{"Gyro z: "}};
+uint32_t aux;
+
+uint32_t* RAWptr = &RAW.Abx;
+uint32_t* Offsetptr = &Offset.Abx;
 
 /**
  * TEST CODE BRIEF
@@ -346,13 +350,8 @@ void imu_CALIBRATION(int sensor_num)
     static uint16_t error_count = 0;
     int ret; //auxiliar variable
 
-    static uint32_t* RAWptr = &RAW.Abx;
-    static uint32_t* Offsetptr = &Offset.Abx;
-
     uint8_t sensor_idx = (sensor_num*2);
-    uint8_t sensor_address = 0x3B + sensor_idx;
-    printf(" sen idx %d\r\n", sensor_idx);
-    printf(" sen add %X\r\n", sensor_address);
+    uint8_t sensor_address = ACCEL_XOUT_H + sensor_idx;
      
     who_am_i = 0;
     i2c_example_master_mpu6050_read(I2C_EXAMPLE_MASTER_NUM, WHO_AM_I, &who_am_i, 1);
@@ -393,118 +392,7 @@ void imu_CALIBRATION(int sensor_num)
     {
         RAWptr = &RAW.Abx;
         Offsetptr = &Offset.Abx;
-    }
-
-    /*
-    if(c == 0)
-    {
-        for(int cnt = 0; cnt < CALIB_MAX; cnt++)
-        {
-            if(!(xQueueSend(Light_event, &msg, 0)))
-            {
-                printf(" message failed 1 \r\n");
-            }
-            else
-            {
-                ret = i2c_example_master_mpu6050_read(I2C_EXAMPLE_MASTER_NUM, ACCEL_XOUT_H, &sensor_data[0], 2);
-                if(ret == ESP_OK)
-                {
-                    RAW.Abx = (int16_t)((sensor_data[0] << 8) | sensor_data[1]);
-                    Offset.Abx = imu_avg(RAW.Abx*1000);
-                }
-            }
-            xQueueReceive(imu_event, &imu_msg, portMAX_DELAY);
-            vTaskDelay(10 / portTICK_RATE_MS);
-        }
-        Offset.Abx/=1000;
-        printf("ACEL offset X: %d \r\n", Offset.Abx);
-        imu_avg(0); //RESET AVG
-    }
-    if(c == 1)
-    {
-        for(int cnt = 0; cnt < CALIB_MAX; cnt++)
-        {
-            ret = i2c_example_master_mpu6050_read(I2C_EXAMPLE_MASTER_NUM, ACCEL_YOUT_H, &sensor_data[2], 2);
-            if(ret == ESP_OK)
-            {
-                RAW.Aby = (int16_t)((sensor_data[2] << 8) | sensor_data[3]);
-                Offset.Aby = imu_avg(RAW.Aby*1000);
-            }
-            //vTaskDelay(10 / portTICK_RATE_MS);
-        }
-        Offset.Aby/=1000;
-        printf("ACEL offset Y: %d \r\n", Offset.Aby);
-        imu_avg(0);
-    }
-
-    if(c == 2)
-    {
-        for(int cnt = 0; cnt < CALIB_MAX; cnt++)
-        {
-            ret = i2c_example_master_mpu6050_read(I2C_EXAMPLE_MASTER_NUM, ACCEL_ZOUT_H, &sensor_data[4], 2);
-            if(ret == ESP_OK)
-            {
-                RAW.Abz = (int16_t)((sensor_data[4] << 8) | sensor_data[5]);
-                Offset.Abz = imu_avg(RAW.Abz*1000);
-            }
-           // vTaskDelay(10 / portTICK_RATE_MS);
-        }
-        Offset.Abz/=1000;
-        printf("ACEL offset Z: %d \r\n", Offset.Abz);
-        imu_avg(0);
-    }
-
-    if(c == 3)
-    {
-        for(int cnt = 0; cnt < CALIB_MAX; cnt++)
-        {
-            ret = i2c_example_master_mpu6050_read(I2C_EXAMPLE_MASTER_NUM, GYRO_XOUT_H, &sensor_data[8], 2);
-            if(ret == ESP_OK)
-            {
-                RAW.Gbx = (int16_t)((sensor_data[8] << 8) | sensor_data[9]);
-                Offset.Gbx = imu_avg(RAW.Gbx*1000);
-            }
-            //vTaskDelay(10 / portTICK_RATE_MS);
-        }
-        Offset.Gbx/=1000;
-        printf("GYRO offset X: %d \r\n", Offset.Gbx);
-        imu_avg(0);
-    }
-
-    if(c == 4)
-    {
-        for(int cnt = 0; cnt < CALIB_MAX; cnt++)
-        {
-            ret = i2c_example_master_mpu6050_read(I2C_EXAMPLE_MASTER_NUM, GYRO_YOUT_H, &sensor_data[10], 2);
-            if(ret == ESP_OK)
-            {
-                RAW.Gby = (int16_t)((sensor_data[10] << 8) | sensor_data[11]);
-                Offset.Gby = imu_avg(RAW.Gby*1000);
-            }
-            //vTaskDelay(10 / portTICK_RATE_MS);
-        }
-        Offset.Gby/=1000;
-        printf("GYRO offset Y: %d \r\n", Offset.Gby);
-        imu_avg(0);
-    }
-    if(c == 5)
-    {
-        for(int cnt = 0; cnt < CALIB_MAX; cnt++)
-        {
-            ret = i2c_example_master_mpu6050_read(I2C_EXAMPLE_MASTER_NUM, GYRO_ZOUT_H, &sensor_data[12], 2);
-            if(ret == ESP_OK)
-            {
-                RAW.Gbz = (int16_t)((sensor_data[12] << 8) | sensor_data[13]);
-                Offset.Gbz = imu_avg(RAW.Gbz*1000);
-            }
-            //vTaskDelay(10 / portTICK_RATE_MS);
-        }
-        Offset.Gbz/=1000;
-        printf("GYRO offset Z: %d \r\n", Offset.Gbz);
-        imu_avg(0);
-    }*/
-    //vTaskDelay(100 / portTICK_RATE_MS);
-}
+    }}
 
 void imu_init(void)
 {
