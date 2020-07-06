@@ -407,8 +407,8 @@ int calibrate_sensor(int sensor_num)
  * */
 int32_t imu_avg(int32_t data)
 { 
-    static int i = 0;
-    static int P = 0;
+    static int32_t i = 0;
+    static int32_t P = 0;
     if (i == 0)
     {
         P = data; 
