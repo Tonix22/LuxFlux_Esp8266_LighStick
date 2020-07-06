@@ -25,6 +25,7 @@ typedef enum
     CALIBRATION,
     END_CALIBRATION,
     ABORT_CALIBRATION,
+    OFF,
 }Light_MessageID;
 
 void Light_task(void *arg);

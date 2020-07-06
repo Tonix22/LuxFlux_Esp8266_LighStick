@@ -51,7 +51,7 @@ void Light_task(void *arg)
                 //printf("Fade\r\n");
                 xQueueSend(imu_light_queue, &imu_msg, 100);
                 break;
-                
+
             case END_CALIBRATION:
                 if(Calibrating == true)
                 {
@@ -61,9 +61,10 @@ void Light_task(void *arg)
                 }
                 Fade_color();
                 imu_msg = IMU_END_CALIBRATION;
-                xQueueSend(imu_light_queue, &imu_msg, 0);
+                xQueueSend(imu_light_queue, &imu_msg, 100);
                 break;
-
+            case OFF:
+                LedStick.Led_stick_off();
             default:
                 break;
             }
@@ -122,7 +123,6 @@ void Fade_color(void)
             it = LedStick.Fade_colors.begin();
         }
     }
-    //vTaskDelay(60/ portTICK_RATE_MS);
 }
 
 void Flash_color(uint8_t R, uint8_t G, uint8_t B, int ms_rate)

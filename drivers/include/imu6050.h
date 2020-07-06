@@ -4,7 +4,7 @@
 
 #define CALIB_MAX       25
 #define SENSORS_NUM     7
-
+#define CALIB_END       82 // 5 second
 typedef enum
 {
     IMU_ENABLE,

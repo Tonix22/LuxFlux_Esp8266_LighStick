@@ -300,23 +300,19 @@ void imu_calib_light(void)
     }
     if(calibration_status == imu_ok)
     {
-        imu_to_led_msg = END_CALIBRATION;
-
-        for(int cnt = 0; cnt < 16; cnt++)
+        for(int cnt = 0; cnt < CALIB_END; cnt++)
         {
+            imu_to_led_msg = END_CALIBRATION;
             if(!(xQueueSend(Light_event, &imu_to_led_msg, 0)))
             {
                 printf(" message failed 2\r\n");
                 break;
             }
-            else
-            {
-                //printf(" CALIB END %d\r\n", cnt);
-                vTaskDelay(10/ portTICK_RATE_MS);
-            }
-            vTaskDelay(10/ portTICK_RATE_MS);
+            vTaskDelay(60/ portTICK_RATE_MS);
             xQueueReceive(imu_light_queue, &imu_to_led_msg, portMAX_DELAY);
         }
+        imu_to_led_msg = OFF;
+        xQueueSend(Light_event, &imu_to_led_msg, 0);
     }
     else
     {
