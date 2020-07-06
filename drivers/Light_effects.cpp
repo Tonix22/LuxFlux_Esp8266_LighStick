@@ -9,7 +9,7 @@
 Light LedStick;
 
 xQueueHandle Light_event = NULL;
-extern xQueueHandle imu_event;
+extern xQueueHandle imu_light_queue;
 
 
 static TimerHandle_t hold_next_sound;
@@ -20,22 +20,26 @@ void Light_task(void *arg)
 {
     Light_event = xQueueCreate(10, sizeof(uint32_t));
     hold_next_sound = xTimerCreate("Sound", 100/ portTICK_RATE_MS, pdFALSE, 0, sound_action);
-    MessageID msg;
-    imu_msgID imu_msg;
+    Light_MessageID msg;
+    IMU_msgID imu_msg;
     bool Calibrating = false;
     printf("light_task init\r\n");
     for(;;)
     {
         if (xQueueReceive(Light_event, &msg, portMAX_DELAY))
         {
-            if(msg == SOUND && sound_released == true)
+            switch (msg)
             {
-                input_IO_disable_isr();
-                sound_released = false;
-                xTimerStart(hold_next_sound, 0 );
-            }
-            if(msg == CALIBRATION)
-            {
+            case SOUND:
+                if(sound_released == true)
+                {
+                    input_IO_disable_isr();
+                    sound_released = false;
+                    xTimerStart(hold_next_sound, 0 );
+                }
+                break;
+
+            case CALIBRATION:
                 if(Calibrating == false)
                 {   
                     Calibrating = true;
@@ -43,12 +47,12 @@ void Light_task(void *arg)
                     LedStick.Fade_colors[1] = {255, 128, 0};
                 }
                 Fade_color();
-                imu_msg = IMU_CAL;
-                vTaskDelay(50/ portTICK_RATE_MS);
-                xQueueSend(imu_event, &imu_msg, 10/ portTICK_RATE_MS);
-            }
-            if(msg == END_CALIBRATION)
-            {
+                imu_msg = IMU_CALIBRATION;
+                //printf("Fade\r\n");
+                xQueueSend(imu_light_queue, &imu_msg, 100);
+                break;
+                
+            case END_CALIBRATION:
                 if(Calibrating == true)
                 {
                     Calibrating = false;
@@ -56,11 +60,13 @@ void Light_task(void *arg)
                     LedStick.Fade_colors[1] = {0, 255, 0};
                 }
                 Fade_color();
-                imu_msg = IMU_END_CAL;
-                vTaskDelay(50/ portTICK_RATE_MS);
-                xQueueSend(imu_event, &imu_msg, 10/ portTICK_RATE_MS);
+                imu_msg = IMU_END_CALIBRATION;
+                xQueueSend(imu_light_queue, &imu_msg, 0);
+                break;
+
+            default:
+                break;
             }
-            vTaskDelay(50/ portTICK_RATE_MS);
         }
     }
 }
@@ -116,7 +122,7 @@ void Fade_color(void)
             it = LedStick.Fade_colors.begin();
         }
     }
-    vTaskDelay(60/ portTICK_RATE_MS);
+    //vTaskDelay(60/ portTICK_RATE_MS);
 }
 
 void Flash_color(uint8_t R, uint8_t G, uint8_t B, int ms_rate)

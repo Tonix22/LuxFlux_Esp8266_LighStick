@@ -17,11 +17,11 @@
 
 
 extern xQueueHandle Light_event;
-extern xQueueHandle imu_event;
+extern xQueueHandle imu_cntrl_queue;
 
 void app_main(void)
 {
-    //MessageID test = FADE;
+    //Light_MessageID test = FADE;
     esp_set_cpu_freq(ESP_CPU_FREQ_160M);
     vTaskDelay(1000 / portTICK_RATE_MS);
     printf("app_main\r\n");
@@ -37,8 +37,11 @@ void app_main(void)
     //wifi_init_sta();
     //wifi_init_softap();
     //Thread_safety_GPIO_config();
-    xTaskCreate(imu_calib_light, "imu_task", 1024, NULL, 10, NULL);
-    
+    IMU_msgID msg = IMU_START_CALIBRATION;
+    vTaskDelay(1000/ portTICK_RATE_MS);
+
+    xQueueSend(imu_cntrl_queue, &msg, 10/ portTICK_RATE_MS);
+
     for(;;)
     {
         vTaskDelay(5000/ portTICK_RATE_MS);
