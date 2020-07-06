@@ -24,7 +24,9 @@ typedef enum
     WIFI_CMD,
     CALIBRATION,
     END_CALIBRATION,
-}MessageID;
+    ABORT_CALIBRATION,
+    OFF,
+}Light_MessageID;
 
 void Light_task(void *arg);
 void Ligth_init(void);

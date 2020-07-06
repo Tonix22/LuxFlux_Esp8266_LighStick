@@ -20,7 +20,7 @@ static void gpio_isr_handler(void *arg)
 {
     uint32_t gpio_num = (uint32_t) arg;
     if(gpio_num == GPIO_SDD2){
-        MessageID send = SOUND;
+        Light_MessageID send = SOUND;
         xQueueSendFromISR(Light_event, &send, NULL);
     }
     
