@@ -33,7 +33,7 @@ void Light_task(void *arg)
             case SOUND:
                 if(sound_released == true)
                 {
-                    input_IO_disable_isr();
+                    input_IO_disable_isr(GPIO_SDD2);
                     sound_released = false;
                     xTimerStart(hold_next_sound, 0 );
                 }
