@@ -11,6 +11,7 @@ typedef enum
     IMU_START_CALIBRATION,
     IMU_CALIBRATION,
     IMU_END_CALIBRATION,
+    IMU_ABORT_CALIBRATION,
     IMU_DISABLE
 }IMU_msgID;
 
@@ -18,6 +19,7 @@ typedef enum
 {
     imu_ok  = 0,
     imu_err = -1,
+    imu_abort = -1,
     imu_I_dont_know_who_am_i = -1,
 }IMU_status;
 
@@ -32,6 +34,7 @@ typedef struct//RAW ACCELERATION DATA
     int32_t Gbz;
 }MeasureBits;
 
+IMU_msgID get_calibration_status();
 int32_t imu_avg(int32_t data);
 void imu_calib_light(void);
 void imu_task(void *arg);

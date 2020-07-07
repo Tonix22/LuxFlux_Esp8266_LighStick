@@ -9,12 +9,13 @@ extern "C" {
 
 #endif
 
-
+void menu_init();
 void Menu_func();
 void sync_action(TimerHandle_t xTimer );
 
 #ifdef __cplusplus
-
+#include "IO_driver.h"
+#include "imu6050.h"
 typedef void (*foo_ptr)();
 struct Node
 {
@@ -36,24 +37,24 @@ typedef enum{
 void idle_func();
 void rith_func();
 void circ_func();
-void leve_func();
+void level_func();
 void wifi_func();
 void sync_func();
 
 class DispMenu
 {
+    public:
     Node screens[ARRAYSIZE] = 
                         { 
                             {idle_func,&(screens[RITH] ) },
                             {rith_func,&(screens[CIRC] ) },
                             {circ_func,&(screens[LEVEL]) },
-                            {leve_func,&(screens[WIFI] ) }, 
+                            {level_func,&(screens[WIFI] )}, 
                             {wifi_func,&(screens[IDLE] ) },
                             {sync_func,&(screens[IDLE] ) },
                         };
     Node* screen = &(screens[IDLE]);
 
-    public:
     DispMenu& operator++(int)
     {
         screen = screen->next;

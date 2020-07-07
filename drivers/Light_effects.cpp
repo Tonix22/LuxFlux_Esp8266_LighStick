@@ -33,9 +33,14 @@ void Light_task(void *arg)
             case SOUND:
                 if(sound_released == true)
                 {
-                    input_IO_disable_isr(GPIO_SDD2);
                     sound_released = false;
                     xTimerStart(hold_next_sound, 0 );
+                }
+                break;
+            case ABORT_CALIBRATION:
+                for(uint8_t blink=0; blink < 10; blink++)
+                {
+                    Flash_color(255,0,0,30);
                 }
                 break;
 

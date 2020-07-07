@@ -12,9 +12,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/queue.h"
+#include "FreeRTOS_wrapper.h"
 
 #include "esp_log.h"
 #include "esp_system.h"
@@ -23,11 +21,12 @@
 #include "driver/i2c.h"
 #include "IO_driver.h"
 #include "Light_effects.h"
+#include "Menu.h"
 #include "imu6050.h"
 
 
-
 //static const char *TAG = "main";
+extern xQueueHandle sync_lock;
 extern xQueueHandle Light_event;
 xQueueHandle imu_light_queue = NULL;
 xQueueHandle imu_cntrl_queue = NULL;
@@ -47,6 +46,8 @@ int32_t aux;
 
 int32_t* RAWptr = &RAW.Abx;
 int32_t* Offsetptr = &Offset.Abx;
+
+IMU_msgID calib_status;
 
 /**
  * TEST CODE BRIEF
@@ -285,6 +286,7 @@ void imu_calib_light(void)
 {
     int calibration_status = imu_ok;
     imu_to_led_msg         = CALIBRATION;
+    bool Notify_menu;
 
     printf("IMU calibration start: \r\n");
 
@@ -320,10 +322,15 @@ void imu_calib_light(void)
         imu_to_led_msg = ABORT_CALIBRATION;
         xQueueSend(Light_event, &imu_to_led_msg, 0);
     }
+    xQueueSend(sync_lock,&Notify_menu,0);
 
     vTaskDelay(100/ portTICK_RATE_MS);
+    calib_status = IMU_END_CALIBRATION;
 }
-
+IMU_msgID get_calibration_status()
+{
+    return calib_status;
+}
 /**
  * @brief Calibration procedure
  * @param sensor_num Acel x,Acel y, Acel z, TEMP, Gyro x ,Gyro y ,Gyro z
@@ -339,7 +346,7 @@ int calibrate_sensor(int sensor_num)
     uint8_t sensor_data[14]; // array to save all sensors measurements
     uint8_t sensor_idx     = (sensor_num*2);
     uint8_t sensor_address = ACCEL_XOUT_H + sensor_idx;
-    
+    IMU_msgID abort;
     int status = 0; //auxiliar variable
 
     who_am_i = 0;
@@ -348,6 +355,7 @@ int calibrate_sensor(int sensor_num)
     //check if the conection is correct
     if (0x68 == who_am_i) 
     {
+        calib_status = IMU_CALIBRATION; 
         memset(sensor_data, 0, 14);
         for(int cnt = 0; cnt < CALIB_MAX; cnt++)
         {
@@ -370,8 +378,14 @@ int calibrate_sensor(int sensor_num)
                 }
             }
             xQueueReceive(imu_light_queue, &imu_to_led_msg, portMAX_DELAY);
+            xQueueReceive(imu_cntrl_queue,&abort,0);
+            if(abort == IMU_ABORT_CALIBRATION)
+            {
+                calib_status = IMU_ABORT_CALIBRATION;
+                return imu_abort;
+            }
             imu_to_led_msg = CALIBRATION;
-            vTaskDelay(100 / portTICK_RATE_MS);
+            vTaskDelay(60 / portTICK_RATE_MS);
         }
         (*Offsetptr)/=1000;
         printf("%s %d \r\n", sensor_log[sensor_num],*Offsetptr);
