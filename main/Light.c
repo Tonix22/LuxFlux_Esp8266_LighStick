@@ -32,8 +32,6 @@ void app_main(void)
     //Task
     Ligth_init();
     imu_init();
-    //menu
-    menu_init();
     // wifi
     wifi_general_cfg();
 

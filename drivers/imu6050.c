@@ -26,7 +26,6 @@
 
 
 //static const char *TAG = "main";
-extern xQueueHandle sync_lock;
 extern xQueueHandle Light_event;
 xQueueHandle imu_light_queue = NULL;
 xQueueHandle imu_cntrl_queue = NULL;
@@ -268,7 +267,18 @@ void imu_task(void *arg)
             case IMU_START_CALIBRATION:
                 imu_calib_light();
                 break;
-            
+            case IMU_CIRCULAR_DRAW:
+                if(calib_status != IMU_ABORT_CALIBRATION)
+                {
+                    printf("here draw a circule\r\n");
+                }
+                break;
+            case IMU_LINEAR_DRAW:
+                if(calib_status != IMU_ABORT_CALIBRATION)
+                {
+                    printf("here draw a line\r\n");
+                }
+                break;
             default:
                 printf("INVALID IMU msg\r\n");
                 break;
@@ -286,7 +296,6 @@ void imu_calib_light(void)
 {
     int calibration_status = imu_ok;
     imu_to_led_msg         = CALIBRATION;
-    bool Notify_menu;
 
     printf("IMU calibration start: \r\n");
 
@@ -315,17 +324,16 @@ void imu_calib_light(void)
         }
         imu_to_led_msg = OFF;
         xQueueSend(Light_event, &imu_to_led_msg, 0);
+        calib_status = IMU_END_CALIBRATION;
     }
     else
     {
         printf("CHECK IMU CONECTION PLEASE OR RETRY CALIBRATION\r\n");
         imu_to_led_msg = ABORT_CALIBRATION;
         xQueueSend(Light_event, &imu_to_led_msg, 0);
+        calib_status = IMU_ABORT_CALIBRATION;
     }
-    xQueueSend(sync_lock,&Notify_menu,0);
 
-    vTaskDelay(100/ portTICK_RATE_MS);
-    calib_status = IMU_END_CALIBRATION;
 }
 IMU_msgID get_calibration_status()
 {

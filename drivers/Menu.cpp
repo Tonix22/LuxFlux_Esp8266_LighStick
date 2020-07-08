@@ -8,64 +8,84 @@ using namespace std;
 DispMenu Menu;
 gpio_num_t io_num;
 int pressed = 0;
-xQueueHandle sync_lock;
 
 extern xQueueHandle imu_cntrl_queue;
 
-void menu_init()
+void calib_and_cmd(IMU_msgID action)
 {
-    sync_lock = xQueueCreate(5,sizeof(bool));
-    if( sync_lock == NULL )
+    IMU_msgID msg = IMU_START_CALIBRATION;
+    xQueueSend(imu_cntrl_queue, &msg, 10/ portTICK_RATE_MS);
+
+    /*Hold calibration done*/
+    while(get_calibration_status() == IMU_CALIBRATION)
     {
-        cout<<"sync_lock was not created"<<endl;
+        vTaskDelay(100 / portTICK_RATE_MS);
+    }
+    if(get_calibration_status() != IMU_ABORT_CALIBRATION)
+    {
+        xQueueSend(imu_cntrl_queue, &action, portMAX_DELAY);
     }
 }
-
-// functions
-void idle_func(){
-    cout<<"idle_func"<<endl;
-}
-
-void rith_func()
+void abort_if_needed()
 {
-    input_IO_enable_isr(GPIO_SDD2, GPIO_INTR_NEGEDGE);
-    cout<<"rith_func"<<endl;
-}
-
-void circ_func()
-{
-    static bool first_time = true;
     IMU_msgID msg;
-    cout<<"circ_func"<<endl;
-
-    input_IO_disable_isr(GPIO_SDD2);
-
-    if(first_time == true) // TODO Check if we calibrate every time we are enter or only once
-    {
-        first_time = false;
-        msg        = IMU_START_CALIBRATION;
-        xQueueSend(imu_cntrl_queue, &msg, 10/ portTICK_RATE_MS);
-    }
-}
-
-void level_func(){
-    IMU_msgID msg;
-    cout<<"level_func"<<endl;
     if(get_calibration_status() == IMU_CALIBRATION)
     {
         msg = IMU_ABORT_CALIBRATION;
         xQueueSend(imu_cntrl_queue, &msg, 10/ portTICK_RATE_MS);
     }
+}
+
+// functions
+void idle_subtask(void *arg)
+{
+    cout<<"idle_subtask"<<endl;
+    vTaskDelete(NULL);
+}
+
+void rith_subtask(void *arg)
+{
+    input_IO_enable_isr(GPIO_SDD2, GPIO_INTR_NEGEDGE);
+    cout<<"rith_subtask"<<endl;
+    vTaskDelete(NULL);
+}
+
+void circular_subtask(void *arg)
+{
+    cout<<"circular_subtask"<<endl;
     
+    input_IO_disable_isr(GPIO_SDD2); // disable last sound ISR
+    
+    calib_and_cmd(IMU_CIRCULAR_DRAW);
+
+    vTaskDelete(NULL);
 }
 
-void wifi_func(){
-    cout<<"wifi_func"<<endl;
+void level_subtask(void *arg)
+{
+    cout<<"level_subtask"<<endl;
+
+    abort_if_needed();
+
+    calib_and_cmd(IMU_LINEAR_DRAW);
+
+    vTaskDelete(NULL);
 }
 
-void sync_func(){
+void wifi_subtask(void *arg)
+{
+    cout<<"wifi_subtask"<<endl;
+
+    abort_if_needed();
+
+    vTaskDelete(NULL);
+}
+
+void sync_subtask(void *arg)
+{
     input_IO_disable_isr(GPIO_SDD2);
-    cout<<"sync_func"<<endl;
+    cout<<"sync_subtask"<<endl;
+    vTaskDelete(NULL);
 }
 
 /* 

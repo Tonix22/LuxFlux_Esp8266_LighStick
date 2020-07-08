@@ -9,18 +9,19 @@ extern "C" {
 
 #endif
 
-void menu_init();
 void Menu_func();
 void sync_action(TimerHandle_t xTimer );
 
 #ifdef __cplusplus
 #include "IO_driver.h"
 #include "imu6050.h"
-typedef void (*foo_ptr)();
+#include "FreeRTOS_wrapper.h"
+typedef void (*foo_ptr)(void *);
 struct Node
 {
     foo_ptr val;
     Node* next;
+    unsigned char id;
 };
     //Definitions
 typedef enum{
@@ -34,25 +35,35 @@ typedef enum{
 }Screen_t;
 
 //Prototypes
-void idle_func();
-void rith_func();
-void circ_func();
-void level_func();
-void wifi_func();
-void sync_func();
+void idle_subtask(void *arg);
+void rith_subtask(void *arg);
+void circular_subtask(void *arg);
+void level_subtask(void *arg);
+void wifi_subtask(void *arg);
+void sync_subtask(void *arg);
 
 class DispMenu
 {
     public:
     Node screens[ARRAYSIZE] = 
                         { 
-                            {idle_func,&(screens[RITH] ) },
-                            {rith_func,&(screens[CIRC] ) },
-                            {circ_func,&(screens[LEVEL]) },
-                            {level_func,&(screens[WIFI] )}, 
-                            {wifi_func,&(screens[IDLE] ) },
-                            {sync_func,&(screens[IDLE] ) },
+                            {idle_subtask,    &(screens[RITH] ), IDLE },
+                            {rith_subtask,    &(screens[CIRC] ), RITH },
+                            {circular_subtask,&(screens[LEVEL]), CIRC },
+                            {level_subtask,   &(screens[WIFI]),  LEVEL}, 
+                            {wifi_subtask,    &(screens[IDLE] ), WIFI },
+                            {sync_subtask,    &(screens[IDLE] ), SYNC },
                         };
+    char names[ARRAYSIZE][15] = 
+    {
+        "idle_subtask",
+        "rith_subtask",
+        "circ_subtask",
+        "level_subtask",
+        "wifi_subtask",
+        "sync_subtask",
+    };
+    
     Node* screen = &(screens[IDLE]);
 
     DispMenu& operator++(int)
@@ -64,11 +75,12 @@ class DispMenu
     void operator[](std::size_t idx)
     {
         this->screen = &(screens[idx]);//update screen
-        screens[idx].val(); //go to screen
+        //screens[idx].val(); //go to screen
     }
     void operator ( ) () // Menu()
     {
-        this->screen->val();
+        //this->screen->val();
+        xTaskCreate(this->screen->val, names[this->screen->id], 1024, NULL, 5, NULL);
     }
 };
 
