@@ -32,13 +32,18 @@ xQueueHandle imu_cntrl_queue = NULL;
 
 uint32_t P = 0;
 int i = 0;
+float TIEMPO = 0.04; //40 milisegundos VARIABLE DE PRUEBA
 
 Light_MessageID imu_to_led_msg;
 IMU_msgID       imu_cntrl;
-
+float A = 0, V = 0, Vf = 0, S = 0;
 
 MeasureBits RAW;
 MeasureBits Offset;
+MeasureAcel Vel;
+MeasureAcel Pos;
+float *Vo = &(Vel.Abx);
+float *So = &(Pos.Abx);
 
 char sensor_log[7][20] = {{"Acel x: "},{"Acel y: "},{"Acel z: "},{"TEMP: "},{"Gyro x: "},{"Gyro y: "},{"Gyro z: "}};
 int32_t aux;
@@ -445,5 +450,36 @@ int32_t imu_avg(int32_t data)
     i++;
     return P;
 }
+
+void Position(int32_t Ab)
+{
+
+    //Ab -= Offsetptr;
+    A = ((float)Ab) / 16384; //valor de la hoja de datos LBS/g para obtener gravedades
+    printf("div: %f  \r\n", A);
+    A *= -9.81; //Gravedad 
+    printf("acel: %f en m/s^2 \r\n", A);
+    V = A*TIEMPO; //a(t) = (vf - vo)/t
+    V = V + *Vo;
+    printf("Vel: %f en m/s \r\n", V);
+    S = V*TIEMPO;  //v(t) = (sf- so)/t
+    S = S + *So;
+    printf("Pos: %f en m \r\n", S);
+    *Vo = V;//
+    *So = S;
+
+    if(Vo == &Vel.Abz)
+    {
+        Vo = &Vel.Abx;
+        So = &Pos.Abx;
+    }
+    else
+    {
+        Vo++;
+        So++;
+    }
+    
+}
+
 
 
