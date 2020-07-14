@@ -31,16 +31,18 @@ void app_main(void)
     Thread_safety_GPIO_config();
     //Task
     Ligth_init();
-    imu_init();
+    //imu_init();
     // wifi
-    wifi_general_cfg();
+    //wifi_general_cfg();
 
+    
     #if IMU_TEST
     IMU_msgID msg = IMU_START_CALIBRATION;
     vTaskDelay(1000/ portTICK_RATE_MS);
     xQueueSend(imu_cntrl_queue, &msg, 10/ portTICK_RATE_MS);
     #endif
 
+    Position(10000);
     for(;;)
     {
         //WIFI_OFF();
@@ -48,6 +50,7 @@ void app_main(void)
         #if PIXEL_TEST
         Pixel_rainbow();
         #endif
+        
         //WIFI_ON();
         //vTaskDelay(5000/ portTICK_RATE_MS);
 

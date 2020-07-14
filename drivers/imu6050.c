@@ -36,7 +36,7 @@ float TIEMPO = 0.04; //40 milisegundos VARIABLE DE PRUEBA
 
 Light_MessageID imu_to_led_msg;
 IMU_msgID       imu_cntrl;
-float A = 0, V = 0, Vf = 0, S = 0;
+float A = 0, V = 0, Vf = 0, S = 0, G = 0, theta = 0;
 
 MeasureBits RAW;
 MeasureBits Offset;
@@ -479,6 +479,19 @@ void Position(int32_t Ab)
         So++;
     }
     
+}
+
+void Angle(int32_t Gb)
+{
+    //Gb -= Offsetptr;
+    if(theta > 360)
+    {
+        theta = 0;
+    }
+    G = ((float)Gb)/16.4;
+    theta = theta + G*TIEMPO;
+    printf("Gyro: %f en grados/s \r\n", G);
+    printf("Ángulo final: %f en grados \r\n", theta);
 }
 
 
