@@ -54,6 +54,7 @@ class DispMenu
                             {wifi_subtask,    &(screens[IDLE] ), WIFI },
                             {sync_subtask,    &(screens[IDLE] ), SYNC },
                         };
+                       
     char names[ARRAYSIZE][15] = 
     {
         "idle_subtask",
@@ -74,7 +75,7 @@ class DispMenu
     //a way to acces to a function by index
     void operator[](std::size_t idx)
     {
-        this->screen = &(screens[idx]);//update screen
+        xTaskCreate(this->screen->val, names[idx], 1024, NULL, 5, NULL);
         //screens[idx].val(); //go to screen
     }
     void operator ( ) () // Menu()
