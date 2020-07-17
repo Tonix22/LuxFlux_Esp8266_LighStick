@@ -36,10 +36,18 @@ typedef struct//RAW ACCELERATION DATA
     int32_t Gbz;
 }MeasureBits;
 
+typedef struct//RAW DATA
+{
+    float Abx;
+    float Aby;
+    float Abz;
+}MeasureAcel;
+
 IMU_msgID get_calibration_status();
 int32_t imu_avg(int32_t data);
 void imu_calib_light(void);
 void imu_task(void *arg);
 void imu_init(void);
 int calibrate_sensor(int sensor_num);
+void Position(int32_t Ab);
 #endif
