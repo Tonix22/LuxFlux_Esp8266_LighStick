@@ -1,4 +1,4 @@
 (fp_lib_table
   (lib (name ESP8266)(type KiCad)(uri C:/Users/etonix.A2E/Documents/LUXFLUX/ESP8266.pretty)(options "")(descr ""))
-  (lib (name LightProyect)(type KiCad)(uri C:/msys32_espressif/home/etonix/Lights/Hardware_Desing/LightProyect.pretty)(options "")(descr ""))
+  (lib (name LightProyect)(type KiCad)(uri /home/tonix/Documents/LUXFLUX/Hardware_Desing/LightProyect.pretty)(options "")(descr ""))
 )
