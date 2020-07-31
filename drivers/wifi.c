@@ -114,6 +114,7 @@ void wifi_general_cfg(void)
         tcpip_adapter_ip_info_t val;
         tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP,&val);
         ESP_LOGI(TAG, "old dhcp:%s", ip4addr_ntoa(&val.ip));
+        //ip rightstick
         IP4_ADDR(&val.ip,192, 168 , 5, 1);
         IP4_ADDR(&val.gw,192, 168 , 5, 1);
         tcpip_adapter_dhcps_stop(TCPIP_ADAPTER_IF_AP);
