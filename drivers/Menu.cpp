@@ -54,9 +54,9 @@ void circular_subtask(void *arg)
 {
     cout<<"circular_subtask"<<endl;
     
-    input_IO_disable_isr(GPIO_SDD2); // disable last sound ISR
+    //input_IO_disable_isr(GPIO_SDD2); // disable last sound ISR
     
-    calib_and_cmd(IMU_CIRCULAR_DRAW);
+    //calib_and_cmd(IMU_CIRCULAR_DRAW);
 
     vTaskDelete(NULL);
 }
@@ -65,9 +65,9 @@ void level_subtask(void *arg)
 {
     cout<<"level_subtask"<<endl;
 
-    abort_if_needed();
+    //abort_if_needed();
 
-    calib_and_cmd(IMU_LINEAR_DRAW);
+    //calib_and_cmd(IMU_LINEAR_DRAW);
 
     vTaskDelete(NULL);
 }
@@ -76,7 +76,8 @@ void wifi_subtask(void *arg)
 {
     cout<<"wifi_subtask"<<endl;
 
-    abort_if_needed();
+    //abort_if_needed();
+    wifi_init_softap();
 
     vTaskDelete(NULL);
 }
