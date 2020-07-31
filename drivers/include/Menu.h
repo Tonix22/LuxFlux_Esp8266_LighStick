@@ -77,13 +77,13 @@ class DispMenu
     //a way to acces to a function by index
     void operator[](std::size_t idx)
     {
-        xTaskCreate(this->screen->val, names[idx], 1024, NULL, 5, NULL);
+        xTaskCreate(this->screen->val, names[idx], 2048, NULL, 5, NULL);
         //screens[idx].val(); //go to screen
     }
     void operator ( ) () // Menu()
     {
         //this->screen->val();
-        xTaskCreate(this->screen->val, names[this->screen->id], 1024, NULL, 5, NULL);
+        xTaskCreate(this->screen->val, names[this->screen->id], 2048, NULL, 5, NULL);
     }
 };
 

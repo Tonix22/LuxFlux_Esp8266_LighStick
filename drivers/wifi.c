@@ -11,16 +11,6 @@
 #include "wifi.h"
 #include "FreeRTOS_wrapper.h"
 
-#include "esp_system.h"
-#include "esp_log.h"
-#include "esp_netif.h"
-#include "esp_event.h"
-#include "esp_wifi.h"
-#include "nvs.h"
-#include "nvs_flash.h"
-
-#include "lwip/err.h"
-#include "lwip/sys.h"
 
 
 
@@ -48,7 +38,9 @@ static void event_handler(void* arg, esp_event_base_t event_base,
 {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) 
     {
+        #if AUTOCONNECT
         esp_wifi_connect();
+        #endif
     } 
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) 
     {
@@ -102,49 +94,57 @@ void wifi_general_cfg(void)
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
     // REGISTER STATUS FLAGS
-    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
+    
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
     
-    wifi_init_softap();
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+    
     //wifi_init_sta();
+    wifi_init_softap();
 
-    #ifdef CHANGE_DCHP // change in production
-        tcpip_adapter_ip_info_t val;
-        tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP,&val);
-        ESP_LOGI(TAG, "old dhcp:%s", ip4addr_ntoa(&val.ip));
-        //ip rightstick
-        IP4_ADDR(&val.ip,192, 168 , 5, 1);
-        IP4_ADDR(&val.gw,192, 168 , 5, 1);
-        tcpip_adapter_dhcps_stop(TCPIP_ADAPTER_IF_AP);
-
-        tcpip_adapter_set_ip_info(TCPIP_ADAPTER_IF_AP,&val);
-
-        tcpip_adapter_dhcps_start(TCPIP_ADAPTER_IF_AP);
-
-        tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP,&val);
-
-        ESP_LOGI(TAG, "new dhcp:%s", ip4addr_ntoa(&val.ip));
-    #endif
-    WIFI_OFF();
 }
 
 
 void wifi_init_sta(void)
 {
+    s_wifi_event_group = xEventGroupCreate();
+    
+    ESP_ERROR_CHECK(nvs_flash_init());
+
+    tcpip_adapter_init();
+
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+
+    esp_wifi_stop();
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
+
+    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL));
+
     wifi_config_t wifi_config = {
         .sta = {
             .ssid = ESP_WIFI_SSID,
             .password = ESP_WIFI_PASS
         },
     };
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
-    esp_wifi_stop();
-    esp_wifi_start();
+
+    /* Setting a password implies station will connect to all security modes including WEP/WPA.
+        * However these modes are deprecated and not advisable to be used. Incase your Access point
+        * doesn't support WPA2, these mode can be enabled by commenting below line */
+
+    if (strlen((char *)wifi_config.sta.password)) {
+        wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+    }
+
+    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
+    ESP_ERROR_CHECK(esp_wifi_start() );
 
     ESP_LOGI(TAG, "wifi_init_sta finished.");
-
+    #if AUTOCONNECT
     /* Waiting until either the connection is established (WIFI_CONNECTED_BIT) or connection failed for the maximum
      * number of re-tries (WIFI_FAIL_BIT). The bits are set by event_handler() (see above) */
     EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
@@ -168,33 +168,57 @@ void wifi_init_sta(void)
     ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler));
     ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler));
     vEventGroupDelete(s_wifi_event_group);
+    #endif
 }
 
 void wifi_init_softap(void)
 {
-    wifi_config_t wifi_config;
+    tcpip_adapter_init();
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    wifi_config.ap.ssid_len = strlen(AP_SSID)+1;
-    memset(&wifi_config.ap.ssid,0,32);
-    strcpy((char*)&wifi_config.ap.ssid,AP_SSID);
-    memset(&wifi_config.ap.password,0,64);
-    strcpy((char*)&wifi_config.ap.password,AP_PASS);
-    wifi_config.ap.authmode = WIFI_AUTH_WPA_PSK;
-    wifi_config.ap.max_connection = MAX_STA_CONN;
-    wifi_config.ap.channel = 6;
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-
+    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
+    
+    wifi_config_t wifi_config = {
+        .ap = {
+            .ssid = AP_SSID,
+            .ssid_len = strlen(AP_SSID),
+            .password = AP_PASS,
+            .max_connection = MAX_STA_CONN,
+            .authmode = WIFI_AUTH_WPA_WPA2_PSK
+        },
+    };
     if (strlen(AP_PASS) == 0) {
         wifi_config.ap.authmode = WIFI_AUTH_OPEN;
-        printf("OPEN\r\n");
     }
 
     esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config);
     //esp_wifi_stop();
     esp_wifi_start();
 
-    ESP_LOGI(TAG, "wifi_init_softap finished. AP_SSID:%s password:%s",
+    ESP_LOGI(TAG, "wifi_init_softap finished. SSID:%s password:%s",
              AP_SSID, AP_PASS);
+
+    #ifdef CHANGE_DCHP // change in production
+        tcpip_adapter_ip_info_t val;
+        tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP,&val);
+        ESP_LOGI(TAG, "old dhcp:%s", ip4addr_ntoa(&val.ip));
+        IP4_ADDR(&val.ip,192, 168 , 5, 1);
+        IP4_ADDR(&val.gw,192, 168 , 5, 1);
+        tcpip_adapter_dhcps_stop(TCPIP_ADAPTER_IF_AP);
+
+        tcpip_adapter_set_ip_info(TCPIP_ADAPTER_IF_AP,&val);
+
+        tcpip_adapter_dhcps_start(TCPIP_ADAPTER_IF_AP);
+
+        tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP,&val);
+
+        ESP_LOGI(TAG, "new dhcp:%s", ip4addr_ntoa(&val.ip));
+    #endif
+
+
 }
 
 void WIFI_ON(void)

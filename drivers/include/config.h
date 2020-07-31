@@ -1,9 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define RIGHT_STICK (1)
-#define LEFT_STICK  (0)
-#define WIFI_HOME   (0)
+#define RIGHT_STICK (0)
+#define LEFT_STICK  (1)
 
 #define DEVELOMENT  (1) //GPIO adapat to DEV board
 #define RELEASE     (0) // change on GPIO definition
@@ -22,6 +21,7 @@
 #endif
 
 #define ESP_MAXIMUM_RETRY  10
+#define AUTOCONNECT (0)
 
 
 //This defines changes depending on upper defines
