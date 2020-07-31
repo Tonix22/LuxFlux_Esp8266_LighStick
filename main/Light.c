@@ -33,16 +33,17 @@ void app_main(void)
     Ligth_init();
     //imu_init();
     // wifi
-    //wifi_general_cfg();
+    wifi_general_cfg();
 
     
     #if IMU_TEST
     IMU_msgID msg = IMU_START_CALIBRATION;
     vTaskDelay(1000/ portTICK_RATE_MS);
     xQueueSend(imu_cntrl_queue, &msg, 10/ portTICK_RATE_MS);
+    Position(10000);
     #endif
 
-    Position(10000);
+    
     for(;;)
     {
         //WIFI_OFF();

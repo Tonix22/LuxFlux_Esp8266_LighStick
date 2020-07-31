@@ -16,6 +16,8 @@ void sync_action(TimerHandle_t xTimer );
 #include "IO_driver.h"
 #include "imu6050.h"
 #include "FreeRTOS_wrapper.h"
+#include "wifi.h"
+#include "tcp_server.h"
 typedef void (*foo_ptr)(void *);
 struct Node
 {

@@ -108,7 +108,7 @@ void wifi_general_cfg(void)
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
     
     wifi_init_softap();
-    wifi_init_sta();
+    //wifi_init_sta();
 
     #ifdef CHANGE_DCHP // change in production
         tcpip_adapter_ip_info_t val;
@@ -127,6 +127,7 @@ void wifi_general_cfg(void)
 
         ESP_LOGI(TAG, "new dhcp:%s", ip4addr_ntoa(&val.ip));
     #endif
+    WIFI_OFF();
 }
 
 
@@ -189,7 +190,7 @@ void wifi_init_softap(void)
     }
 
     esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config);
-    esp_wifi_stop();
+    //esp_wifi_stop();
     esp_wifi_start();
 
     ESP_LOGI(TAG, "wifi_init_softap finished. AP_SSID:%s password:%s",
