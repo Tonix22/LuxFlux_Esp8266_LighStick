@@ -3,6 +3,7 @@
 
 #define RIGHT_STICK (0)
 #define LEFT_STICK  (1)
+#define WIFI_HOME   (0)
 
 #define DEVELOMENT  (1) //GPIO adapat to DEV board
 #define RELEASE     (0) // change on GPIO definition
@@ -10,6 +11,8 @@
 #define IMU_TEST    (0)
 
 #define PIXEL_TEST  (0)
+
+#define WIFI_TEST   (0)
 
 #define AP_PASS      "DiaboloSticks"
 #define MAX_STA_CONN       4
@@ -21,7 +24,7 @@
 #endif
 
 #define ESP_MAXIMUM_RETRY  10
-#define AUTOCONNECT (0)
+#define AUTOCONNECT (1)
 
 
 //This defines changes depending on upper defines
@@ -45,8 +48,16 @@
 
 #endif
 
+
 #if LEFT_STICK
+
     #define AP_SSID      "LuxFLUX_LEFT"
+
+    #if !WIFI_HOME
+    
+    #define ESP_WIFI_SSID      "LuxFLUX_RIGHT"
+    #define ESP_WIFI_PASS      "DiaboloSticks"
+    #endif
         //TCP
     #define HOST_IP_ADDR RIGHT_STICK_IP
     

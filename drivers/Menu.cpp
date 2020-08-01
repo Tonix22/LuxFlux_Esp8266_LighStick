@@ -76,9 +76,13 @@ void wifi_subtask(void *arg)
 
     //abort_if_needed();
 
+    #if WIFI_TEST
+    wifi_init_sta();
+    #else
     wifi_init_softap();
-    
-    //server_init();
+    #endif
+
+    server_init();
 
     vTaskDelete(NULL);
 }

@@ -193,10 +193,10 @@ void wifi_init_softap(void)
     if (strlen(AP_PASS) == 0) {
         wifi_config.ap.authmode = WIFI_AUTH_OPEN;
     }
-
-    esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config);
-    //esp_wifi_stop();
-    esp_wifi_start();
+    
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config));
+    ESP_ERROR_CHECK(esp_wifi_start());
 
     ESP_LOGI(TAG, "wifi_init_softap finished. SSID:%s password:%s",
              AP_SSID, AP_PASS);
