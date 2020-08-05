@@ -26,6 +26,12 @@
 
 #include "config.h"
 
+#define SEND_NACK message_response(&sock,"NACK\n")
+#define SEND_ACK message_response(&sock,"ACK\n")
+
+
+bool message_response(int* sock, const char* msg);
+
 static const char *TAG = "example";
 
 static void tcp_server_task(void *pvParameters)
@@ -34,14 +40,15 @@ static void tcp_server_task(void *pvParameters)
     char addr_str[128];
     int addr_family;
     int ip_protocol;
+    bool first_msg=true;
 
     while (1) {
 
-
-        struct sockaddr_in destAddr;
-        destAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-        destAddr.sin_family = AF_INET;
-        destAddr.sin_port = htons(PORT);
+        struct sockaddr_in destAddr = {
+        .sin_addr.s_addr = htonl(INADDR_ANY),
+        .sin_family = AF_INET,
+        .sin_port = htons(PORT),
+        };
         addr_family = AF_INET;
         ip_protocol = IPPROTO_IP;
         inet_ntoa_r(destAddr.sin_addr, addr_str, sizeof(addr_str) - 1);
@@ -97,17 +104,41 @@ static void tcp_server_task(void *pvParameters)
                 inet_ntoa_r(((struct sockaddr_in *)&sourceAddr)->sin_addr.s_addr, addr_str, sizeof(addr_str) - 1);
 
 
-                rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string
+                //rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string
+                char* ptr = strchr(rx_buffer,'\n');
+                if(ptr !=NULL){
+                    *ptr ='\0';
+                }
+                ptr = strchr(rx_buffer,'\r'); 
+                if(ptr !=NULL){
+                    *ptr ='\0';
+                }
                 ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
                 ESP_LOGI(TAG, "%s", rx_buffer);
 
-                int err = send(sock, "ACK", 4, 0);
-                if (err < 0) {
-                    ESP_LOGE(TAG, "Error occured during sending: errno %d", errno);
-                    break;
+                if(first_msg){
+                    first_msg= false;
+                    if(strcmp (rx_buffer, "SYNC") == 0){
+
+                        message_response(&sock,"READY TO SYNC\n");
+
+                    }else if (strcmp (rx_buffer, "FOTA") == 0){
+
+                        message_response(&sock,"READY TO FOTA\n");
+
+                    }else{
+                        SEND_NACK;
+                    }
+                }else{
+                    if (!SEND_ACK) {
+                        break;
+                    }
                 }
+                
             }
         }
+
+        SEND_NACK;
 
         if (sock != -1) {
             ESP_LOGE(TAG, "Shutting down socket and restarting...");
@@ -116,6 +147,16 @@ static void tcp_server_task(void *pvParameters)
         }
     }
     vTaskDelete(NULL);
+}
+
+bool message_response(int* sock, const char* msg){
+    int err = send(*sock, msg, (strlen(msg)+1), 0);
+    if (err < 0) {
+        ESP_LOGE(TAG, "Error occured during sending: errno %d", errno);
+        return false;
+    }
+
+    return true;
 }
 
 void server_init()
@@ -129,4 +170,6 @@ void server_init()
     */
 
     xTaskCreate(tcp_server_task, "tcp_server", 4096, NULL, 5, NULL);
+
+    
 }

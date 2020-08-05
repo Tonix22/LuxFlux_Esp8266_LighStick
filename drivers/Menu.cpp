@@ -91,6 +91,7 @@ void sync_subtask(void *arg)
 {
     input_IO_disable_isr(GPIO_SDD2);
     cout<<"sync_subtask"<<endl;
+    
     vTaskDelete(NULL);
 }
 

@@ -3,7 +3,7 @@
 
 #define RIGHT_STICK (0)
 #define LEFT_STICK  (1)
-#define WIFI_HOME   (0)
+#define WIFI_HOME   (1)
 
 #define DEVELOMENT  (1) //GPIO adapat to DEV board
 #define RELEASE     (0) // change on GPIO definition
@@ -12,7 +12,7 @@
 
 #define PIXEL_TEST  (0)
 
-#define WIFI_TEST   (0)
+#define WIFI_TEST   (1)
 
 #define AP_PASS      "DiaboloSticks"
 #define MAX_STA_CONN       4
