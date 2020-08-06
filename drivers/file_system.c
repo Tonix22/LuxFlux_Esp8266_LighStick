@@ -7,17 +7,18 @@
 */
 
 #include "file_system.h"
-
-//static const char *TAG = "example";
+#include "structs.h"
+static const char *TAG = "example";
 
 FILE* f;
 char line[64];
 
-inline void file_system_init()
+void file_system_init()
 {
-     //ESP_LOGI(TAG, "Initializing SPIFFS");
+    //ESP_LOGI(TAG, "Initializing SPIFFS");
     
-    esp_vfs_spiffs_conf_t conf = {
+    esp_vfs_spiffs_conf_t conf = 
+    {
       .base_path = BASE_PATH,
       .partition_label = NULL,
       .max_files = 5,
@@ -28,13 +29,19 @@ inline void file_system_init()
     // Note: esp_vfs_spiffs_register is an all-in-one convenience function.
     esp_err_t ret = esp_vfs_spiffs_register(&conf);
 
-    if (ret != ESP_OK) {
-        if (ret == ESP_FAIL) {
-            //ESP_LOGE(TAG, "Failed to mount or format filesystem");
-        } else if (ret == ESP_ERR_NOT_FOUND) {
-            //ESP_LOGE(TAG, "Failed to find SPIFFS partition");
-        } else {
-            //ESP_LOGE(TAG, "Failed to initialize SPIFFS (%s)", esp_err_to_name(ret));
+    if (ret != ESP_OK) 
+    {
+        if (ret == ESP_FAIL) 
+        {
+            ESP_LOGE(TAG, "Failed to mount or format filesystem");
+        } 
+        else if (ret == ESP_ERR_NOT_FOUND) 
+        {
+            ESP_LOGE(TAG, "Failed to find SPIFFS partition");
+        } 
+        else 
+        {
+            ESP_LOGE(TAG, "Failed to initialize SPIFFS (%s)", esp_err_to_name(ret));
         }
         return;
     }
@@ -42,18 +49,18 @@ inline void file_system_init()
     size_t total = 0, used = 0;
     ret = esp_spiffs_info(NULL, &total, &used);
     if (ret != ESP_OK) {
-       //ESP_LOGE(TAG, "Failed to get SPIFFS partition information (%s)", esp_err_to_name(ret));
+       ESP_LOGE(TAG, "Failed to get SPIFFS partition information (%s)", esp_err_to_name(ret));
     } else {
-        //ESP_LOGI(TAG, "Partition size: total: %d, used: %d", total, used);
+        ESP_LOGI(TAG, "Partition size: total: %d, used: %d", total, used);
     }
 }
-inline void deinit()
+void deinit()
 {
     // All done, unmount partition and disable SPIFFS
     esp_vfs_spiffs_unregister(NULL);
     //ESP_LOGI(TAG, "SPIFFS unmounted");
 }
-inline bool check_file_exist(const char* name)
+bool check_file_exist(const char* name)
 {
     struct stat st;
     bool state = false;
@@ -70,7 +77,7 @@ void delete_file(const char* name)
     unlink(name);
 }
 
-void file_open(File_action r_w, char* name)
+void file_open(File_action r_w, const char* name)
 {
     if(f == NULL) // file pointer is not taken
     {
@@ -85,20 +92,32 @@ void file_open(File_action r_w, char* name)
         }
     }
 }
+
 void write_chunck(void* data, char data_type_size, int data_size)
-{
+{   
+    //int pos = (int) ftell(f);
+    //printf("data_type size: %d",data_type_size);
+    //printf("file size: %d\r\n",pos);
     if(f !=NULL)
     {
         //fprintf(file, "Hello World!\n");
         fwrite (data , data_type_size, data_size, f);
     }
+    //fseek(f,pos+data_type_size,SEEK_CUR);
 }
-void read_chunk(void* data, char data_type_size,char num_of_elements)
+bool read_chunk(void* data, char data_type_size,char num_of_elements)
 {
+    bool success_reading = true;
+    int val = 0;
     if(f !=NULL)
     {
-        fread(data,data_type_size,num_of_elements,f);
+        val = fread(data,data_type_size,num_of_elements,f);
     }
+    if(val != num_of_elements)
+    {
+        success_reading = false; // end of file
+    }
+    return success_reading;
 }
 void read_line()
 {
@@ -111,6 +130,9 @@ void read_line()
     }
     //ESP_LOGI(TAG, "Read from file: '%s'", line);
 }
+
+
+
 void write_format_string(const char* format, ...)
 {
     va_list args;
@@ -118,11 +140,61 @@ void write_format_string(const char* format, ...)
     vfprintf(f, format,args);
     va_end(args);
 }
-inline void close_file()
+void close_file()
 {
     fclose(f);
     f = NULL;
 }
+
+
+#define write_me
+void write_to_sound()
+{
+    
+    #ifdef write_me
+    RGB* chunk =  malloc(sizeof(RGB));
+    if(check_file_exist(RITH_FILE))
+    {
+        delete_file(RITH_FILE);
+    }
+    file_open(WRITE, RITH_FILE);
+    chunk->RED   = 3;
+    chunk->GREEN = 7;
+    chunk->BLUE  = 9;
+    write_chunck(chunk,sizeof(RGB),1);//only write on struct   
+    chunk->RED   = 11;
+    chunk->GREEN = 13;
+    chunk->BLUE  = 15;
+    write_chunck(chunk,sizeof(RGB),1);//only write on struct
+    chunk->RED   = 0;
+    chunk->GREEN = 255;
+    chunk->BLUE  = 0;
+    write_chunck(chunk,sizeof(RGB),1);//only write on struct
+    chunk->RED   = 0;
+    chunk->GREEN = 0;
+    chunk->BLUE  = 255;
+    write_chunck(chunk,sizeof(RGB),1);//only write on struct
+    chunk->RED   = 255;
+    chunk->GREEN = 255;
+    chunk->BLUE  = 255;
+    write_chunck(chunk,sizeof(RGB),1);//only write on struct
+    close_file();
+    #else
+    RGB* chunk = malloc(sizeof(RGB));
+    file_open(READ, RITH_FILE);
+    for(int i=0;i<5;i++)
+    {   
+        read_chunk(chunk,sizeof(RGB),1);
+        printf("chunk->R: %d\r\n",chunk->RED);
+        printf("chunk->G: %d\r\n",chunk->GREEN);
+        printf("chunk->B: %d\r\n",chunk->BLUE);
+        memset(chunk,0,sizeof(RGB));
+    }
+    close_file();
+    
+    #endif
+}
+/*
 
 void Example1()
 {
@@ -151,8 +223,11 @@ void Example1()
     chunk->B = 30;
     chunk->G = 50;
     chunk->R = 240;
+    
     file_open(WRITE, LINE_FILE);// First create a file.
+
     write_chunck(chunk,sizeof(Data),1);//only write on struct
+
     close_file();
 
     //clear chunk
@@ -167,15 +242,4 @@ void Example1()
 
     free(chunk);
  }
-
-/*
-void app_main(void)
-{
-    file_system_init();
-
-    Example_struct();
-    
-    deinit();
-
-}
 */

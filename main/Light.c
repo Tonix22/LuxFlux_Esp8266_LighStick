@@ -15,7 +15,9 @@
 #include "imu6050.h"
 #include "neopixel.h"
 #include "Menu.h"
+#include "file_system.h"
 #include "config.h"
+
 
 //master
 extern xQueueHandle Light_event;
@@ -24,15 +26,16 @@ extern xQueueHandle imu_cntrl_queue;
 void app_main(void)
 {
     esp_set_cpu_freq(ESP_CPU_FREQ_160M);
-    printf("Light test Debug\r\n");
-    //IO config
+    /*IO config*/
     Output_LED_config();
     input_IO_config();
     Thread_safety_GPIO_config();
-    //Task
+    /*filse system -> flash driver*/
+    file_system_init();
+    //write_to_sound();
+    /*Task*/
     Ligth_init();
     //imu_init();
-
 
     #if IMU_TEST
     IMU_msgID msg = IMU_START_CALIBRATION;
@@ -42,18 +45,11 @@ void app_main(void)
 
     for(;;)
     {
-        //WIFI_OFF();
+
         vTaskDelay(5000/ portTICK_RATE_MS);
         #if PIXEL_TEST
         Pixel_rainbow();
         #endif
-        
-        //WIFI_ON();
-        //vTaskDelay(5000/ portTICK_RATE_MS);
-
-        //Flash_color(255,255,255,100);
-        //Fade_color();
-        //Pixel_rainbow_Fade();
     }
     
 }

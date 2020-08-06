@@ -18,10 +18,11 @@
 
 #define DIR(NAME) BASE_PATH"/"#NAME".txt"
 
-#define IDLE_FILE DIR(IDLE)
-#define RITH_FILE DIR(RITH)
-#define CIRC_FILE DIR(CIRC)
-#define LINE_FILE DIR(LINE)
+#define IDLE_FILE DIR(IDLE) // /spiffs/IDLE.txt
+#define RITH_FILE DIR(RITH) // /spiffs/RITH.txt
+#define CIRC_FILE DIR(CIRC) // /spiffs/CIRC.txt
+#define LINE_FILE DIR(LINE) // /spiffs/LINE.txt
+
 
 
 typedef enum
@@ -39,18 +40,19 @@ struct
 }typedef Data;
 
 
-inline void file_system_init();
-inline void deinit();
-inline bool check_file_exist(const char* name);
+void file_system_init();
+void deinit();
+bool check_file_exist(const char* name);
 void delete_file(const char* name);
-void file_open(File_action r_w, char* name);
+void file_open(File_action r_w, const char* name);
 void write_chunck(void* data, char data_type_size, int data_size);
-void read_chunk(void* data, char data_type_size,char num_of_elements);
+bool read_chunk(void* data, char data_type_size,char num_of_elements);
 void read_line();
 void write_format_string(const char* format, ...);
-inline void close_file();
-void Example1();
-void Example_struct();
+void close_file();
+void write_to_sound();
+//void Example1();
+//void Example_struct();
 
 
 
