@@ -33,7 +33,8 @@ extern "C"
         #include "IO_driver.h"
         #include "structs.h"
         #include <vector>
-        typedef std::vector<RGB>::iterator vec_ptr;
+        #include <list>
+        typedef std::list<RGB>* list_ptr;
         class Light
         {
             
@@ -43,24 +44,18 @@ extern "C"
             int flash_times       = 1000;
             int fade_cycles       = 1000;
             
-            std::vector<RGB> idle_light;
-            std::vector<RGB> sound_light;
-            std::vector<RGB> circular_light;
-            std::vector<RGB> linear_light;
+            std::list<RGBT> idle_light;
+            std::list<RGB> sound_light;
+            std::list<RGB> circular_light;
+            std::list<RGB> linear_light;
 
-            vec_ptr feature_collection[Features];
+            list_ptr feature_collection[Features];
             
             Light()
             {
-                idle_light.reserve(MAX_RGB);
-                sound_light.reserve(MAX_RGB);
-                circular_light.reserve(MAX_RGB);
-                linear_light.reserve(MAX_RGB);
-
-                feature_collection[IDLE_feature]     = idle_light.begin();
-                feature_collection[RITH_feature]     = sound_light.begin();
-                feature_collection[CIRCULAR_feature] = circular_light.begin();
-                feature_collection[LINEAR_feature]   = linear_light.begin();
+                feature_collection[RITH_feature]     = &sound_light;
+                feature_collection[CIRCULAR_feature] = &circular_light;
+                feature_collection[LINEAR_feature]   = &linear_light;
             }
 
             std::vector<RGB> Fade_colors

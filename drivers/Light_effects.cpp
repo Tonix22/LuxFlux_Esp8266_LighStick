@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <vector>
+#include <list>
 #include "esp_system.h"
 #include "Light_effects.h"
 #include "FreeRTOS_wrapper.h"
@@ -7,7 +8,7 @@
 #include "memory_admin.h"
 
 Light* LedStick;
-std::vector<RGB>::iterator sd_it; // iterator for sound
+std::list<RGB>::iterator sd_it; // iterator for sound
 
 xQueueHandle Light_event = NULL;
 extern xQueueHandle imu_light_queue;

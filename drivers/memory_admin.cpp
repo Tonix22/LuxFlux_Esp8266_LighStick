@@ -1,62 +1,85 @@
 #include <stdio.h>
 #include <vector>
+#include <list>
 #include "memory_admin.h"
 #include "Light_effects.h"
 #include "structs.h"
 extern Light* LedStick;
 
-void write_to_class(feature_t feature);
+template <typename T>
+void write_to_class_gen(feature_t feature);
 
 void check_files_and_read()
 {
     if(check_file_exist(IDLE_FILE))
     {
         file_open(READ, IDLE_FILE);
-        write_to_class(IDLE_feature);
+        write_to_class_gen<RGBT>(IDLE_feature);
         close_file();
     }
     if(check_file_exist(RITH_FILE))
     {
         file_open(READ, RITH_FILE);
-        write_to_class(RITH_feature);
+        write_to_class_gen<RGB>(RITH_feature);
         close_file();
     }
     if(check_file_exist(CIRC_FILE))
     {
         file_open(READ, CIRC_FILE);
-        write_to_class(CIRCULAR_feature);
+        write_to_class_gen<RGB>(CIRCULAR_feature);
         close_file();
     }
     if(check_file_exist(LINE_FILE))
     {
         file_open(READ, LINE_FILE);
-        write_to_class(LINEAR_feature);
+        write_to_class_gen<RGB>(LINEAR_feature);
         close_file();
     }
 }
 
+
 /*
-Feature_collection is an (array of iterators)
-Each iteator points to a feature begin.
-Each feature is a vector of RGB
+    debug a color
+    printf("[%d, ",(LedStick->feature_collection[feature]->back()).RED);
+    printf(",%d, ",(LedStick->feature_collection[feature]->back()).GREEN);
+    printf(",%d], ",(LedStick->feature_collection[feature]->back()).BLUE);
 */
-void write_to_class(feature_t feature)
+void push_to_class(RGB val,feature_t feature)
+{
+    LedStick->feature_collection[feature]->push_back(val);
+}
+/*
+    debug a color
+    printf("[%d, ",(LedStick->idle_light.back()).RED);
+    printf(",%d, ",(LedStick->idle_light.back()).GREEN);
+    printf(",%d, ",(LedStick->idle_light.back()).BLUE);
+    printf(",%d], ",(LedStick->idle_light.back()).time_ms);
+*/
+
+void push_to_class(RGBT val, feature_t feature)
+{
+    LedStick->idle_light.push_back(val);
+}
+
+/*
+
+Reads from flash , and write data into a linked list.
+Each element of the list is an RGB or RGBT struct.
+Lists are found insde de class and should have a max size of 10.
+If file is not yet in EOF 
+
+*/
+template <typename T>
+void write_to_class_gen(feature_t feature)
 {
     bool valid  = true;
     int counter = 0;
-    char size   = sizeof(RGB);
-    if(feature == IDLE_feature)
-    {
-        size = sizeof(RGBT);
-    }        
+    T* chunk  = new(T);
     while(valid && counter < MAX_RGB)
     {
-        valid = read_chunk(&*(LedStick->feature_collection[feature]), size,1);
-        printf("[%d, ",LedStick->sound_light[counter].RED);
-        printf("%d, ",LedStick->sound_light[counter].GREEN);
-        printf("%d ]\r\n",LedStick->sound_light[counter].BLUE);
-        LedStick->feature_collection[feature]++;
+        valid = read_chunk(chunk, sizeof(T),1);
+        push_to_class(*chunk,feature);
         counter++;
     }
-
+    delete(chunk);
 }

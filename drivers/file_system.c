@@ -158,14 +158,10 @@ void write_to_sound()
         delete_file(RITH_FILE);
     }
     file_open(WRITE, RITH_FILE);
-    chunk->RED   = 3;
-    chunk->GREEN = 7;
-    chunk->BLUE  = 9;
+    chunk->RED   = 255;
+    chunk->GREEN = 0;
+    chunk->BLUE  = 0;
     write_chunck(chunk,sizeof(RGB),1);//only write on struct   
-    chunk->RED   = 11;
-    chunk->GREEN = 13;
-    chunk->BLUE  = 15;
-    write_chunck(chunk,sizeof(RGB),1);//only write on struct
     chunk->RED   = 0;
     chunk->GREEN = 255;
     chunk->BLUE  = 0;
@@ -173,6 +169,10 @@ void write_to_sound()
     chunk->RED   = 0;
     chunk->GREEN = 0;
     chunk->BLUE  = 255;
+    write_chunck(chunk,sizeof(RGB),1);//only write on struct
+    chunk->RED   = 255;
+    chunk->GREEN = 255;
+    chunk->BLUE  = 0;
     write_chunck(chunk,sizeof(RGB),1);//only write on struct
     chunk->RED   = 255;
     chunk->GREEN = 255;
