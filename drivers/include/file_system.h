@@ -12,7 +12,8 @@
 #include "esp_log.h"
 #include "esp_spiffs.h"
 
-
+#define MAX_FILES 5
+#define MAX_NAME_SIZE 17
 
 #define BASE_PATH "/spiffs"
 
@@ -39,7 +40,8 @@ struct
     uint32_t time_ms;
 }typedef Data;
 
-
+void save_current_pos();
+void load_curren_pos();
 void file_system_init();
 void deinit();
 bool check_file_exist(const char* name);
@@ -50,7 +52,7 @@ bool read_chunk(void* data, char data_type_size,char num_of_elements);
 void read_line();
 void write_format_string(const char* format, ...);
 void close_file();
-void write_to_sound();
+void write_to_idle();
 //void Example1();
 //void Example_struct();
 

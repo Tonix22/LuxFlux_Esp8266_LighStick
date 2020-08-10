@@ -80,32 +80,6 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
-
-
-void wifi_general_cfg(void)
-{
-    //Create flag group
-    s_wifi_event_group = xEventGroupCreate();
-    
-    ESP_ERROR_CHECK(nvs_flash_init());
-    tcpip_adapter_init();
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
-    
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-    // REGISTER STATUS FLAGS
-    
-    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL));
-    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
-    
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
-    
-    //wifi_init_sta();
-    wifi_init_softap();
-
-}
-
-
 void wifi_init_sta(void)
 {
     s_wifi_event_group = xEventGroupCreate();

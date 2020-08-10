@@ -1,8 +1,13 @@
 #include <iostream>
+#include <vector>
+#include <list>
 #include "Menu.h"
 #include "FreeRTOS_wrapper.h"
 #include "IO_driver.h"
 #include "imu6050.h"
+#include "Light_effects.h"
+#include "memory_admin.h"
+
 using namespace std;
 
 DispMenu Menu;
@@ -10,6 +15,9 @@ gpio_num_t io_num;
 int pressed = 0;
 
 extern xQueueHandle imu_cntrl_queue;
+extern xQueueHandle Light_event;
+extern EventGroupHandle_t Flash_status;
+extern EventGroupHandle_t Light_status;
 
 void calib_and_cmd(IMU_msgID action)
 {
@@ -39,7 +47,30 @@ void abort_if_needed()
 // functions
 void idle_subtask(void *arg)
 {
-    cout<<"idle_subtask"<<endl;
+    while(Light_event == NULL){vTaskDelay(50 / portTICK_RATE_MS);}
+    
+    file_exist(IDLE_feature);
+    EventBits_t bits = xEventGroupGetBits(Flash_status);
+    
+    if(bits & EMPTYFILE)
+    {
+        printf("EMPTY FILE IDLE DONE\r\n");
+    }
+    else
+    {
+        while(!(bits & BAD_FORMAT) && !(bits & ABORT))
+        {
+            file_read(IDLE_feature);
+            bits = xEventGroupGetBits(Flash_status);
+
+            if(bits & READ_OK)
+                IDLE_light();
+
+            bits = xEventGroupClearBits(Flash_status,READ_OK);
+        }
+    }
+
+    xEventGroupClearBits(Flash_status,BAD_FORMAT|READ_OK|ABORT);
     vTaskDelete(NULL);
 }
 

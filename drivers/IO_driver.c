@@ -34,8 +34,7 @@ static void gpio_isr_handler(void *arg)
 static void gpio_menu_task(void *arg)
 {
     uint32_t io_num;
-    
-    //int cnt =0;
+    Menu_func();
     sync_timer = xTimerCreate("Sync", 3000/ portTICK_RATE_MS, pdFALSE, 0, sync_action);
     for (;;) {
         if (xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
@@ -47,12 +46,9 @@ static void gpio_menu_task(void *arg)
 
             if(gpio_get_level(io_num) == 0){
                 Timer1Started = xTimerStart(sync_timer,0);
-                //printf("BOTON PRESSED\n");
                 Menu_func();
-                
             }else{
                 Timer1Started = xTimerStop(sync_timer,0);
-               // printf("BOTON RELEASED\n");
             }
         }
     }

@@ -5,9 +5,10 @@
 extern "C" 
 {
 #endif
-
+    #define TASKCREATE BIT0
     typedef enum
     {
+        LOAD_IDLE,
         ENABLE_SOUND,
         SOUND,
         IMU,
@@ -27,7 +28,7 @@ extern "C"
     void Fade_color(void);
     void Fade_colorG(void);
     void Pixel_rainbow_Fade(void);
-
+    void IDLE_light();
     #ifdef __cplusplus
         #include "neopixel.h"
         #include "IO_driver.h"
@@ -39,24 +40,27 @@ extern "C"
         {
             
             public:
-            uint8_t pixels        = 8;
-            uint8_t rainbow_delay = 10;
-            int flash_times       = 1000;
-            int fade_cycles       = 1000;
-            
-            std::list<RGBT> idle_light;
-            std::list<RGB> sound_light;
-            std::list<RGB> circular_light;
-            std::list<RGB> linear_light;
+            // a list of frames is a sequence
+            std::list<Frame> sequence;
 
-            list_ptr feature_collection[Features];
+            uint8_t pixels        ;
+            uint8_t max_frames    ;
+            uint8_t rainbow_delay ;
+            int flash_times       ;
+            int fade_cycles       ;
             
-            Light()
+
+            
+            Light(uint8_t numer_of_pixels)
             {
-                feature_collection[RITH_feature]     = &sound_light;
-                feature_collection[CIRCULAR_feature] = &circular_light;
-                feature_collection[LINEAR_feature]   = &linear_light;
+                this->pixels = numer_of_pixels;
+                this->max_frames = 10; // max frames in RAM
+                this->rainbow_delay = 10;
+                this->flash_times = 1000;
+                this->fade_cycles = 1000;
             }
+            
+
 
             std::vector<RGB> Fade_colors
             {

@@ -32,7 +32,7 @@ void app_main(void)
     Thread_safety_GPIO_config();
     /*filse system -> flash driver*/
     file_system_init();
-    //write_to_sound();
+    write_to_idle();
     /*Task*/
     Ligth_init();
     //imu_init();

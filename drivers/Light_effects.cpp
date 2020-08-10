@@ -7,8 +7,10 @@
 #include "imu6050.h"
 #include "memory_admin.h"
 
+
 Light* LedStick;
-std::list<RGB>::iterator sd_it; // iterator for sound
+EventGroupHandle_t Light_status;
+
 
 xQueueHandle Light_event = NULL;
 extern xQueueHandle imu_light_queue;
@@ -21,23 +23,20 @@ void Load_colors(void);
 void Light_task(void *arg)
 {
 
-    LedStick = new Light();
-    check_files_and_read();
-    Light_event = xQueueCreate(10, sizeof(uint32_t));
-    hold_next_sound = xTimerCreate("Sound", 100/ portTICK_RATE_MS, pdFALSE, 0, sound_action);
     Light_MessageID msg;
     IMU_msgID imu_msg;
+
+    LedStick         = new Light(8);
+    Light_event      = xQueueCreate(10, sizeof(uint32_t));
+    hold_next_sound  = xTimerCreate("Sound", 100/ portTICK_RATE_MS, pdFALSE, 0, sound_action);
     bool Calibrating = false;
-    printf("light_task init\r\n");
-
-    Load_colors();
-
+    xEventGroupSetBits(Light_status, TASKCREATE);
     for(;;)
     {
         if (xQueueReceive(Light_event, &msg, portMAX_DELAY))
         {
             switch (msg)
-            {
+            {   
             case SOUND:
                 if(sound_released == true)
                 {
@@ -89,26 +88,41 @@ void Light_task(void *arg)
         }
     }
 }
-
 void Ligth_init(void)
 {
+    Light_status = xEventGroupCreate();
     xTaskCreate(Light_task, "Light_task", 4096, NULL, 10, NULL);
+    init_status_Group();
 }
 
 void IDLE_light()
 {
-    //read from Flash
+    for(auto& seq:LedStick->sequence)
+    {
+        for(auto& group: seq.group)
+        {
+            for(int i = 0; i < group.pixels;i++)
+            {
+                LedStick->Paint_LED(group.color);
+            }
+        }
+        if(seq.time > 0)
+        {
+            vTaskDelay(seq.time/portTICK_RATE_MS);
+        }
+    }
+    LedStick->sequence.clear();
 }
 
 void sound_action (TimerHandle_t xTimer )
 {
-    printf("mic: %d,%d,%d\r\n",sd_it->RED,sd_it->GREEN,sd_it->BLUE);
-    LedStick->Fill_Led_stick(*sd_it);
-    sd_it++;
-    if(sd_it == LedStick->sound_light.end())
-    {
-        sd_it = LedStick->sound_light.begin();
-    }
+    //printf("mic: %d,%d,%d\r\n",sd_it->RED,sd_it->GREEN,sd_it->BLUE);
+    //LedStick->Fill_Led_stick(*sd_it);
+    //sd_it++;
+    //if(sd_it == LedStick->sound_light.end())
+    //{
+    //    sd_it = LedStick->sound_light.begin();
+    //}
     sound_released = true;
     input_IO_enable_isr(GPIO_SDD2, GPIO_INTR_NEGEDGE);
 }
@@ -209,8 +223,4 @@ void Pixel_rainbow(void)
 }
 
 
-void Load_colors(void)
-{
-    sd_it = LedStick->sound_light.begin();
-}
 

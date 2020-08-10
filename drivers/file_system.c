@@ -10,6 +10,8 @@
 #include "structs.h"
 static const char *TAG = "example";
 
+fpos_t current_pos;
+
 FILE* f;
 char line[64];
 
@@ -21,7 +23,7 @@ void file_system_init()
     {
       .base_path = BASE_PATH,
       .partition_label = NULL,
-      .max_files = 5,
+      .max_files = MAX_FILES,
       .format_if_mount_failed = true
     };
     
@@ -95,43 +97,44 @@ void file_open(File_action r_w, const char* name)
 
 void write_chunck(void* data, char data_type_size, int data_size)
 {   
-    //int pos = (int) ftell(f);
-    //printf("data_type size: %d",data_type_size);
-    //printf("file size: %d\r\n",pos);
     if(f !=NULL)
     {
-        //fprintf(file, "Hello World!\n");
         fwrite (data , data_type_size, data_size, f);
     }
-    //fseek(f,pos+data_type_size,SEEK_CUR);
 }
+
 bool read_chunk(void* data, char data_type_size,char num_of_elements)
 {
     bool success_reading = true;
     int val = 0;
     if(f !=NULL)
     {
+        load_curren_pos();
         val = fread(data,data_type_size,num_of_elements,f);
     }
     if(val != num_of_elements)
     {
         success_reading = false; // end of file
+        current_pos = 0;
     }
+    else
+    {
+        save_current_pos();
+    }
+
     return success_reading;
 }
 void read_line()
 {
-    //memset(line,0,sizeof(line));
+    
     fgets(line, sizeof(line), f);
     // strip newline
     char* pos = strchr(line, '\n');
     if (pos) {
         *pos = '\0';
     }
-    //ESP_LOGI(TAG, "Read from file: '%s'", line);
+    
 }
-
-
 
 void write_format_string(const char* format, ...)
 {
@@ -146,50 +149,92 @@ void close_file()
     f = NULL;
 }
 
+void save_current_pos()
+{
+    fgetpos(f,&current_pos);
+}
+
+void load_curren_pos()
+{
+    fsetpos(f,&current_pos);
+}
 
 #define write_me
-void write_to_sound()
+void write_to_idle()
 {
     
     #ifdef write_me
-    RGB* chunk =  malloc(sizeof(RGB));
-    if(check_file_exist(RITH_FILE))
+    Block* chunk   =  malloc(sizeof(Block));
+    uint32_t time = 0;
+    if(check_file_exist(IDLE_FILE))
     {
-        delete_file(RITH_FILE);
+        delete_file(IDLE_FILE);
     }
-    file_open(WRITE, RITH_FILE);
-    chunk->RED   = 255;
-    chunk->GREEN = 0;
-    chunk->BLUE  = 0;
-    write_chunck(chunk,sizeof(RGB),1);//only write on struct   
-    chunk->RED   = 0;
-    chunk->GREEN = 255;
-    chunk->BLUE  = 0;
-    write_chunck(chunk,sizeof(RGB),1);//only write on struct
-    chunk->RED   = 0;
-    chunk->GREEN = 0;
-    chunk->BLUE  = 255;
-    write_chunck(chunk,sizeof(RGB),1);//only write on struct
-    chunk->RED   = 255;
-    chunk->GREEN = 255;
-    chunk->BLUE  = 0;
-    write_chunck(chunk,sizeof(RGB),1);//only write on struct
-    chunk->RED   = 255;
-    chunk->GREEN = 255;
-    chunk->BLUE  = 255;
-    write_chunck(chunk,sizeof(RGB),1);//only write on struct
+    file_open(WRITE, IDLE_FILE);
+    for(int i=1;i<=8;i++)
+    {
+        chunk->pixels = i;
+        chunk->color.RED   = 0;
+        chunk->color.GREEN = 0;
+        chunk->color.BLUE  = 255;
+        write_chunck(chunk,sizeof(Block),1);
+        if(i !=8)
+        {
+            chunk->pixels = 8-i;
+            chunk->color.RED   = 0;
+            chunk->color.GREEN = 0;
+            chunk->color.BLUE  = 0;
+            write_chunck(chunk,sizeof(Block),1);
+        }
+        time = 60;
+        write_chunck(&time,sizeof(uint32_t),1);
+    }
+    for(int i=1;i<=8;i++)
+    {
+        chunk->pixels = i;
+        chunk->color.RED   = 0;
+        chunk->color.GREEN = 0;
+        chunk->color.BLUE  = 0;
+        write_chunck(chunk,sizeof(Block),1);
+        if(i !=8)
+        {
+            chunk->pixels = 8-i;
+            chunk->color.RED   = 0;
+            chunk->color.GREEN = 0;
+            chunk->color.BLUE  = 255;
+            write_chunck(chunk,sizeof(Block),1);
+        }
+        time = 60;
+        write_chunck(&time,sizeof(uint32_t),1);
+    }
     close_file();
+    printf("write end\r\n");
     #else
-    RGB* chunk = malloc(sizeof(RGB));
-    file_open(READ, RITH_FILE);
-    for(int i=0;i<5;i++)
-    {   
-        read_chunk(chunk,sizeof(RGB),1);
-        printf("chunk->R: %d\r\n",chunk->RED);
-        printf("chunk->G: %d\r\n",chunk->GREEN);
-        printf("chunk->B: %d\r\n",chunk->BLUE);
-        memset(chunk,0,sizeof(RGB));
+    Block* chunk = malloc(sizeof(Block));
+    bool valid = true;
+    char pixels_cnt = 0;
+    uint32_t time; 
+    file_open(READ, IDLE_FILE);
+
+    while(valid)
+    {
+        printf("[");
+        while (pixels_cnt < 8 && valid)
+        {
+            valid = read_chunk(chunk,sizeof(Block),1);
+            printf("%d",chunk->pixels);
+            printf("(%d,",chunk->color.RED);
+            printf(" %d,",chunk->color.GREEN);
+            printf(" %d),",chunk->color.BLUE);
+            pixels_cnt+=chunk->pixels;
+        }
+        printf("]");
+        valid = read_chunk(&time,sizeof(uint32_t),1);
+        printf("%d\r\n",time);
+        time = 0;
+        pixels_cnt = 0;
     }
+    
     close_file();
     
     #endif
