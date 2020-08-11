@@ -53,6 +53,7 @@ void read_line();
 void write_format_string(const char* format, ...);
 void close_file();
 void write_to_idle();
+void write_to_rith();
 //void Example1();
 //void Example_struct();
 

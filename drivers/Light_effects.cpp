@@ -14,10 +14,12 @@ extern EventGroupHandle_t Menu_status;
 xQueueHandle Light_event = NULL;
 extern xQueueHandle imu_light_queue;
 
-static TimerHandle_t hold_next_sound;
 static bool sound_released = true;
-void sound_action (TimerHandle_t xTimer );
-void Load_colors(void);
+static bool first_beat = true;
+
+void sound_action (void* arg );
+
+static uint32_t beat_time = 40000;
 
 void Light_task(void *arg)
 {
@@ -27,7 +29,6 @@ void Light_task(void *arg)
 
     LedStick         = new Light(8);
     Light_event      = xQueueCreate(10, sizeof(uint32_t));
-    hold_next_sound  = xTimerCreate("Sound", 100/ portTICK_RATE_MS, pdFALSE, 0, sound_action);
     bool Calibrating = false;
 
     for(;;)
@@ -40,7 +41,9 @@ void Light_task(void *arg)
                 if(sound_released == true)
                 {
                     sound_released = false;
-                    xTimerStart(hold_next_sound, 0 );
+                    hw_timer_init(sound_action, NULL);
+                    hw_timer_alarm_us(beat_time, false);
+                    printf("beat:%d\r\n",beat_time);
                 }
                 break;
             case ABORT_CALIBRATION:
@@ -135,17 +138,26 @@ EventBits_t IDLE_light()
     return wait_buffer;
 }
 
-void sound_action (TimerHandle_t xTimer )
+void sound_action (void* arg )
 {
-    //printf("mic: %d,%d,%d\r\n",sd_it->RED,sd_it->GREEN,sd_it->BLUE);
-    //LedStick->Fill_Led_stick(*sd_it);
-    //sd_it++;
-    //if(sd_it == LedStick->sound_light.end())
-    //{
-    //    sd_it = LedStick->sound_light.begin();
-    //}
+    
+    if(first_beat)
+    {
+        first_beat = false;
+        LedStick->seq_it = LedStick->sequence.begin();
+    }
+    beat_time = (LedStick->seq_it->time)*1000;
+    
+    LedStick->Fill_Led_stick(LedStick->seq_it->group.back().color);
+    LedStick->seq_it++;
+
+    if(LedStick->seq_it == LedStick->sequence.end())
+    {
+        first_beat = true;
+    }
     sound_released = true;
     input_IO_enable_isr(GPIO_SDD2, GPIO_INTR_NEGEDGE);
+    hw_timer_deinit();
 }
 
 
@@ -180,7 +192,13 @@ void Flash_color(uint8_t R, uint8_t G, uint8_t B, int ms_rate)
 
     vTaskDelay(ms_rate/ portTICK_RATE_MS); 
 }
+void Set_Frames_buffer(uint8_t frames)
+{
+    LedStick->max_frames = frames;
+}
 
+
+/*
 void Pixel_rainbow_Fade(void)
 {
     static uint8_t leds_num = 0;
@@ -242,6 +260,6 @@ void Pixel_rainbow(void)
         LedStick->Fill_Led_stick(red,green,blue);
     }
 }
-
+*/
 
 

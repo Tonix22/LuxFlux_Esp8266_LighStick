@@ -33,6 +33,7 @@ void app_main(void)
     /*filse system -> flash driver*/
     file_system_init();
     write_to_idle();
+    write_to_rith();
     /*Task*/
     Ligth_init();
     //imu_init();

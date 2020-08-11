@@ -12,8 +12,6 @@
 #include "Light_effects.h"
 #include "memory_admin.h"
 
-
-
 using namespace std;
 
 DispMenu Menu;
@@ -89,13 +87,26 @@ void idle_subtask(void *arg)
 void rith_subtask(void *arg)
 {
     xEventGroupSetBits(Menu_status, ABORT);
+
     EventBits_t kill = xEventGroupWaitBits(Menu_status,
             TASKDEATH,
             pdTRUE,// Clear Flag
             pdFALSE,
             portMAX_DELAY); // wait until Task is death
 
-    input_IO_enable_isr(GPIO_SDD2, GPIO_INTR_NEGEDGE);
+    file_exist(RITH_feature);
+    EventBits_t file_mask = xEventGroupGetBits(Flash_status);
+    if(!(file_mask & EMPTYFILE))
+    {
+        Set_Frames_buffer(20);
+        file_read(RITH_feature);
+        file_mask = xEventGroupGetBits(Flash_status);
+        if(!(file_mask & BAD_FORMAT))
+        {
+            input_IO_enable_isr(GPIO_SDD2, GPIO_INTR_NEGEDGE);
+        }
+    }
+    Set_Frames_buffer(10);
     cout<<"rith_subtask"<<endl;
     vTaskDelete(NULL);
 }
@@ -104,7 +115,7 @@ void circular_subtask(void *arg)
 {
     cout<<"circular_subtask"<<endl;
     
-    //input_IO_disable_isr(GPIO_SDD2); // disable last sound ISR
+    input_IO_disable_isr(GPIO_SDD2); // disable last sound ISR
     
     //calib_and_cmd(IMU_CIRCULAR_DRAW);
 

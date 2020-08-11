@@ -10,6 +10,18 @@
 #include "structs.h"
 static const char *TAG = "example";
 
+#define WRITE_BLOCK(P,R,G,B) chunk->pixels = P;\
+                             chunk->color.RED   = R;\
+                             chunk->color.GREEN = G;\
+                             chunk->color.BLUE  = B;\
+                             write_chunck(chunk,sizeof(Block),1);\
+                             
+#define WRITE_TIME(t)       time = t;\
+                            write_chunck(&time,sizeof(uint32_t),1);\
+
+#define RGB_8_40ms(R,G,B)  WRITE_BLOCK(8,R,G,B);\
+                           WRITE_TIME(40);\
+
 fpos_t current_pos;
 
 FILE* f;
@@ -159,10 +171,36 @@ void load_curren_pos()
     fsetpos(f,&current_pos);
 }
 
+void write_to_rith()
+{
+    Block* chunk   =  malloc(sizeof(Block));
+    uint32_t time = 0;
+    if(check_file_exist(RITH_FILE))
+    {
+        delete_file(RITH_FILE);
+    }
+    file_open(WRITE, RITH_FILE);
+    
+    RGB_8_40ms(255,0,0);
+    RGB_8_40ms(255,127,0);
+    RGB_8_40ms(255,255,0);
+    RGB_8_40ms(127,255,0);
+    RGB_8_40ms(0,255,0);
+    RGB_8_40ms(0,255,127);
+    RGB_8_40ms(0,255,255); 
+    RGB_8_40ms(0,127,255);
+    RGB_8_40ms(0,0,255);
+    RGB_8_40ms(127,0,255);
+    RGB_8_40ms(255,0,255);
+    RGB_8_40ms(255,0,127);
+    close_file();
+    printf("write end\r\n");
+    free(chunk);
+}
+
 #define write_me
 void write_to_idle()
 {
-    
     #ifdef write_me
     Block* chunk   =  malloc(sizeof(Block));
     uint32_t time = 0;
@@ -173,42 +211,25 @@ void write_to_idle()
     file_open(WRITE, IDLE_FILE);
     for(int i=1;i<=8;i++)
     {
-        chunk->pixels = i;
-        chunk->color.RED   = 0;
-        chunk->color.GREEN = 0;
-        chunk->color.BLUE  = 255;
-        write_chunck(chunk,sizeof(Block),1);
+        WRITE_BLOCK(i,0,0,255);
         if(i !=8)
         {
-            chunk->pixels = 8-i;
-            chunk->color.RED   = 0;
-            chunk->color.GREEN = 0;
-            chunk->color.BLUE  = 0;
-            write_chunck(chunk,sizeof(Block),1);
+            WRITE_BLOCK(8-i,0,0,0);
         }
-        time = 20;
-        write_chunck(&time,sizeof(uint32_t),1);
+        WRITE_TIME(30);
     }
     for(int i=1;i<=8;i++)
     {
-        chunk->pixels = i;
-        chunk->color.RED   = 0;
-        chunk->color.GREEN = 0;
-        chunk->color.BLUE  = 0;
-        write_chunck(chunk,sizeof(Block),1);
+        WRITE_BLOCK(i,0,0,0);
         if(i !=8)
         {
-            chunk->pixels = 8-i;
-            chunk->color.RED   = 0;
-            chunk->color.GREEN = 0;
-            chunk->color.BLUE  = 255;
-            write_chunck(chunk,sizeof(Block),1);
+            WRITE_BLOCK(8-i,0,0,255);
         }
-        time = 20;
-        write_chunck(&time,sizeof(uint32_t),1);
+        WRITE_TIME(30);
     }
     close_file();
     printf("write end\r\n");
+    free(chunk);
     #else
     Block* chunk = malloc(sizeof(Block));
     bool valid = true;

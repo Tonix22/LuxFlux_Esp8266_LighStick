@@ -28,6 +28,7 @@ extern "C"
     void Fade_colorG(void);
     void Pixel_rainbow_Fade(void);
     EventBits_t IDLE_light();
+    void Set_Frames_buffer(uint8_t frames);
     #ifdef __cplusplus
         #include "neopixel.h"
         #include "IO_driver.h"
@@ -60,7 +61,6 @@ extern "C"
                 this->fade_cycles = 1000;
             }
             
-
 
             std::vector<RGB> Fade_colors
             {

@@ -37,7 +37,7 @@ extern "C"
     typedef struct
     {
         std::list<Block> group; 
-        int32_t time;
+        uint32_t time;
     }Frame;
     //min size = 8 bytes
     //max size = 68 bytes
