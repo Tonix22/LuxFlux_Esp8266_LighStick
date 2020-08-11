@@ -43,7 +43,6 @@ void Light_task(void *arg)
                     sound_released = false;
                     hw_timer_init(sound_action, NULL);
                     hw_timer_alarm_us(beat_time, false);
-                    printf("beat:%d\r\n",beat_time);
                 }
                 break;
             case ABORT_CALIBRATION:
