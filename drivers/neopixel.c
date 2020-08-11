@@ -90,9 +90,9 @@ void interpacket_reset(void)
     }
 }
 /*internally the led strip uses GREEN, RED, BLUE*/
-void Color_Frame(uint8_t R,uint8_t G, uint8_t B)
+void Color_Frame(uint8_t* R,uint8_t* G, uint8_t* B)
 {
-    uint32_t cluster = (G << 16) | ( R << 8) | B;  
+    uint32_t cluster = (*G << 16) | ( *R << 8) | *B;  
     uint32_t bit_value = 0;
 
     //printf("color frame: %06X\r\n",cluster);

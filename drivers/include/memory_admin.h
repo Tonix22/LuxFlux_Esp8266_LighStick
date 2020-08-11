@@ -6,10 +6,8 @@
                     printf(",%d, ",(LedStick->feature_collection[feature]->back()).GREEN);\
                     printf(",%d], ",(LedStick->feature_collection[feature]->back()).BLUE);
 
-#define READ_OK    BIT0
-#define BAD_FORMAT BIT1
-#define ABORT      BIT2
-#define EMPTYFILE  BIT3
+#define BAD_FORMAT BIT0
+#define EMPTYFILE  BIT1
 
 #ifdef __cplusplus
 extern "C" 
@@ -18,7 +16,7 @@ extern "C"
     #include "structs.h"
     void file_exist(feature_t feature);
     void file_read(feature_t feature);
-    void init_status_Group(void);
+    void init_flash_status_group(void);
     #ifdef __cplusplus
     #include "file_system.h"
     

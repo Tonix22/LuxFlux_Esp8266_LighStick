@@ -3,13 +3,12 @@
 #include <list>
 #include "esp_system.h"
 #include "Light_effects.h"
-#include "FreeRTOS_wrapper.h"
 #include "imu6050.h"
 #include "memory_admin.h"
-
+#include "driver/hw_timer.h"
 
 Light* LedStick;
-EventGroupHandle_t Light_status;
+extern EventGroupHandle_t Menu_status;
 
 
 xQueueHandle Light_event = NULL;
@@ -30,7 +29,7 @@ void Light_task(void *arg)
     Light_event      = xQueueCreate(10, sizeof(uint32_t));
     hold_next_sound  = xTimerCreate("Sound", 100/ portTICK_RATE_MS, pdFALSE, 0, sound_action);
     bool Calibrating = false;
-    xEventGroupSetBits(Light_status, TASKCREATE);
+
     for(;;)
     {
         if (xQueueReceive(Light_event, &msg, portMAX_DELAY))
@@ -79,9 +78,6 @@ void Light_task(void *arg)
                 LedStick->Led_stick_off();
                 vTaskDelay(10/ portTICK_RATE_MS);
                 LedStick->Led_stick_off();
-            case LOAD_EFFECTS:
-
-                break;
             default:
                 break;
             }
@@ -90,28 +86,53 @@ void Light_task(void *arg)
 }
 void Ligth_init(void)
 {
-    Light_status = xEventGroupCreate();
     xTaskCreate(Light_task, "Light_task", 4096, NULL, 10, NULL);
-    init_status_Group();
+    init_flash_status_group();
 }
 
-void IDLE_light()
+void IDLE_HW_TIMER(void *arg)
 {
-    for(auto& seq:LedStick->sequence)
+    static int i = 0;
+    
+    for(auto& group: LedStick->seq_it->group)
     {
-        for(auto& group: seq.group)
+        for(i = 0; i < group.pixels; i++)
         {
-            for(int i = 0; i < group.pixels;i++)
-            {
-                LedStick->Paint_LED(group.color);
-            }
-        }
-        if(seq.time > 0)
-        {
-            vTaskDelay(seq.time/portTICK_RATE_MS);
+            LedStick->Paint_LED(group.color);
         }
     }
+    LedStick->seq_it++;
+    if(LedStick->seq_it != LedStick->sequence.end())
+    {
+        hw_timer_alarm_us(LedStick->seq_it->time*1000, true);
+    }
+    else
+    {
+        xEventGroupSetBits(Menu_status,IDLE_BUFFER_END);
+    }
+}
+
+EventBits_t IDLE_light()
+{
+    LedStick->seq_it = LedStick->sequence.begin();
+    hw_timer_init(IDLE_HW_TIMER, NULL);
+    hw_timer_alarm_us(LedStick->seq_it->time*1000, true);
+
+    EventBits_t wait_buffer = xEventGroupWaitBits(Menu_status,
+            ABORT|IDLE_BUFFER_END,
+            pdFALSE,
+            pdFALSE,
+            portMAX_DELAY); // wait until seq is finished
+    /*Terminate frames*/
+    hw_timer_deinit();
     LedStick->sequence.clear();
+    xEventGroupClearBits(Menu_status,IDLE_BUFFER_END);
+    
+    if(wait_buffer & ABORT)
+    {
+        LedStick->Led_stick_off();
+    }
+    return wait_buffer;
 }
 
 void sound_action (TimerHandle_t xTimer )

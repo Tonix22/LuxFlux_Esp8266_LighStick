@@ -186,7 +186,7 @@ void write_to_idle()
             chunk->color.BLUE  = 0;
             write_chunck(chunk,sizeof(Block),1);
         }
-        time = 60;
+        time = 20;
         write_chunck(&time,sizeof(uint32_t),1);
     }
     for(int i=1;i<=8;i++)
@@ -204,7 +204,7 @@ void write_to_idle()
             chunk->color.BLUE  = 255;
             write_chunck(chunk,sizeof(Block),1);
         }
-        time = 60;
+        time = 20;
         write_chunck(&time,sizeof(uint32_t),1);
     }
     close_file();

@@ -17,6 +17,21 @@ void sync_action(TimerHandle_t xTimer );
 #include "imu6050.h"
 #include "FreeRTOS_wrapper.h"
 #include "wifi.h"
+#include "config.h"
+
+#define ABORT BIT0
+#define TASKDEATH BIT1
+#define IDLE_BUFFER_END BIT2
+
+#if DEBUG_MENU
+#define DEBUG_EMPTY_FILE()  else\
+                            {\
+                                printf("EMPTY FILE IDLE DONE\r\n");\
+                            }
+#else
+#define DEBUG_EMPTY_FILE()
+#endif
+
 typedef void (*foo_ptr)(void *);
 struct Node
 {
@@ -54,9 +69,8 @@ class DispMenu
                             {level_subtask,   &(screens[WIFI]),  LEVEL}, 
                             {wifi_subtask,    &(screens[IDLE] ), WIFI },
                             {sync_subtask,    &(screens[IDLE] ), SYNC },
-                        };
-                       
-    char names[ARRAYSIZE][15] = 
+                        };             
+    const char names[ARRAYSIZE][15] = 
     {
         "idle_subtask",
         "rith_subtask",

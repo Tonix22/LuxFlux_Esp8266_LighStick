@@ -1,6 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#define DEBUG_MENU  (0)
+
 #define RIGHT_STICK (0)
 #define LEFT_STICK  (1)
 

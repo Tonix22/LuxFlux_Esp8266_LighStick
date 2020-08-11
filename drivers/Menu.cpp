@@ -1,3 +1,7 @@
+	
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
+
 #include <iostream>
 #include <vector>
 #include <list>
@@ -8,6 +12,8 @@
 #include "Light_effects.h"
 #include "memory_admin.h"
 
+
+
 using namespace std;
 
 DispMenu Menu;
@@ -17,7 +23,7 @@ int pressed = 0;
 extern xQueueHandle imu_cntrl_queue;
 extern xQueueHandle Light_event;
 extern EventGroupHandle_t Flash_status;
-extern EventGroupHandle_t Light_status;
+EventGroupHandle_t Menu_status;
 
 void calib_and_cmd(IMU_msgID action)
 {
@@ -47,35 +53,48 @@ void abort_if_needed()
 // functions
 void idle_subtask(void *arg)
 {
-    while(Light_event == NULL){vTaskDelay(50 / portTICK_RATE_MS);}
+    static bool fts = true;
+    if(fts)//first call of all
+    {
+        Menu_status = xEventGroupCreate();
+        while(Light_event == NULL){vTaskDelay(50 / portTICK_RATE_MS);} // wait light task to be ready
+        fts = false;// only acces once
+    }
     
     file_exist(IDLE_feature);
-    EventBits_t bits = xEventGroupGetBits(Flash_status);
+
+    EventBits_t file_mask = xEventGroupGetBits(Flash_status);
     
-    if(bits & EMPTYFILE)
+    if(!(file_mask & EMPTYFILE))
     {
-        printf("EMPTY FILE IDLE DONE\r\n");
-    }
-    else
-    {
-        while(!(bits & BAD_FORMAT) && !(bits & ABORT))
-        {
+        EventBits_t menu_mask = xEventGroupGetBits(Menu_status);
+        do{
             file_read(IDLE_feature);
-            bits = xEventGroupGetBits(Flash_status);
+            file_mask = xEventGroupGetBits(Flash_status);
+            if(!(file_mask & BAD_FORMAT))
+            {
+                menu_mask = IDLE_light();
+            }
 
-            if(bits & READ_OK)
-                IDLE_light();
-
-            bits = xEventGroupClearBits(Flash_status,READ_OK);
-        }
+        }while(!(menu_mask & ABORT));
     }
+    DEBUG_EMPTY_FILE();
 
-    xEventGroupClearBits(Flash_status,BAD_FORMAT|READ_OK|ABORT);
+    xEventGroupClearBits(Flash_status,BAD_FORMAT|EMPTYFILE);
+    xEventGroupSetBits(Menu_status,TASKDEATH);
+
     vTaskDelete(NULL);
 }
 
 void rith_subtask(void *arg)
 {
+    xEventGroupSetBits(Menu_status, ABORT);
+    EventBits_t kill = xEventGroupWaitBits(Menu_status,
+            TASKDEATH,
+            pdTRUE,// Clear Flag
+            pdFALSE,
+            portMAX_DELAY); // wait until Task is death
+
     input_IO_enable_isr(GPIO_SDD2, GPIO_INTR_NEGEDGE);
     cout<<"rith_subtask"<<endl;
     vTaskDelete(NULL);

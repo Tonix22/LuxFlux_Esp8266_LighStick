@@ -5,10 +5,9 @@
 extern "C" 
 {
 #endif
-    #define TASKCREATE BIT0
+    #include "FreeRTOS_wrapper.h"
     typedef enum
     {
-        LOAD_IDLE,
         ENABLE_SOUND,
         SOUND,
         IMU,
@@ -28,11 +27,12 @@ extern "C"
     void Fade_color(void);
     void Fade_colorG(void);
     void Pixel_rainbow_Fade(void);
-    void IDLE_light();
+    EventBits_t IDLE_light();
     #ifdef __cplusplus
         #include "neopixel.h"
         #include "IO_driver.h"
         #include "structs.h"
+        #include "Menu.h"
         #include <vector>
         #include <list>
         typedef std::list<RGB>* list_ptr;
@@ -42,7 +42,7 @@ extern "C"
             public:
             // a list of frames is a sequence
             std::list<Frame> sequence;
-
+            std::list<Frame>::iterator seq_it;
             uint8_t pixels        ;
             uint8_t max_frames    ;
             uint8_t rainbow_delay ;
@@ -84,21 +84,21 @@ extern "C"
             {
                 for(int led = 0; led < this->pixels ;led++)
                 {
-                    Color_Frame(R,G,B);
+                    Color_Frame(&R,&G,&B);
                 }
             }
             void Fill_Led_stick(RGB& LED)
             {
                 for(int led = 0; led < this->pixels ;led++)
                 {
-                    Color_Frame(LED.RED, LED.GREEN,LED.BLUE);
+                    Color_Frame(&LED.RED, &LED.GREEN,&LED.BLUE);
                 }
             }
-            void Paint_LED(RGB& LED)
+            inline void Paint_LED(RGB& LED)
             {
-                Color_Frame(LED.RED, LED.GREEN,LED.BLUE);
+                Color_Frame(&LED.RED, &LED.GREEN,&LED.BLUE);
             }
-            void Led_stick_off(void)
+            inline void Led_stick_off(void)
             {
                 Fill_Led_stick(0,0,0);
             }

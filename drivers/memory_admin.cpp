@@ -22,7 +22,7 @@ char File_names[MAX_features][MAX_NAME_SIZE] = {{IDLE_FILE},
                                                 {CIRC_FILE},
                                                 {LINE_FILE}};
 
-void init_status_Group(void)
+void init_flash_status_group(void)
 {
     Flash_status = xEventGroupCreate();
 }
@@ -64,10 +64,7 @@ inline void rd_flash_wr_class(feature_t feature)
                 pixels_cnt+=chunk->pixels;
                 frame->group.push_back(*chunk);
             }
-            else
-            {
-                goto Flush;
-            }
+            else {goto Terminate;}
         }
         if(pixels_cnt == LedStick->pixels)//apend time of block
         {
@@ -87,8 +84,6 @@ inline void rd_flash_wr_class(feature_t feature)
             frames_cnt++;
         }
     }
-    Flush:
-    xEventGroupSetBits(Flash_status, READ_OK);
     Terminate:
     frame->group.clear();
     delete(chunk);
