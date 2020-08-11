@@ -160,6 +160,10 @@ void close_file()
     fclose(f);
     f = NULL;
 }
+void clear_file_cursor()
+{
+    current_pos = 0;
+}
 
 void save_current_pos()
 {
@@ -180,7 +184,7 @@ void write_to_rith()
         delete_file(RITH_FILE);
     }
     file_open(WRITE, RITH_FILE);
-    
+
     RGB_8_40ms(255,0,0);
     RGB_8_40ms(255,127,0);
     RGB_8_40ms(255,255,0);

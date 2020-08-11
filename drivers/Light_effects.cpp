@@ -133,6 +133,7 @@ EventBits_t IDLE_light()
     if(wait_buffer & ABORT)
     {
         LedStick->Led_stick_off();
+        clear_file_cursor();
     }
     return wait_buffer;
 }

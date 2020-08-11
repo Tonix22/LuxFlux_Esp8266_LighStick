@@ -17,7 +17,7 @@
 
 #define BASE_PATH "/spiffs"
 
-#define DIR(NAME) BASE_PATH"/"#NAME".txt"
+#define DIR(NAME) BASE_PATH"/"#NAME".bin"
 
 #define IDLE_FILE DIR(IDLE) // /spiffs/IDLE.txt
 #define RITH_FILE DIR(RITH) // /spiffs/RITH.txt
@@ -40,6 +40,7 @@ struct
     uint32_t time_ms;
 }typedef Data;
 
+void clear_file_cursor();
 void save_current_pos();
 void load_curren_pos();
 void file_system_init();
