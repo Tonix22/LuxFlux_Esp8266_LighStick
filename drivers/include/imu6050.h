@@ -1,6 +1,14 @@
 #ifndef IMU6050_H
 #define IMU6050_H
 #include <stdint.h>
+#include "FreeRTOS_wrapper.h"
+
+#define INPROGRESS_CALIB  BIT0
+#define ABORT_CALIB       BIT1 
+#define SUCESS_CALIB      BIT2
+#define TERMINATED        BIT3
+#define IMU_HAS_CONECTION BIT5
+#define IMU_NOT_CONNECT   BIT6
 
 #define CALIB_MAX       25
 #define SENSORS_NUM     7
@@ -8,10 +16,8 @@
 typedef enum
 {
     IMU_ENABLE,
+    IMU_ACK,
     IMU_START_CALIBRATION,
-    IMU_CALIBRATION,
-    IMU_END_CALIBRATION,
-    IMU_ABORT_CALIBRATION,
     IMU_CIRCULAR_DRAW,
     IMU_LINEAR_DRAW,
     IMU_DISABLE
@@ -21,8 +27,8 @@ typedef enum
 {
     imu_ok  = 0,
     imu_err = -1,
-    imu_abort = -1,
-    imu_I_dont_know_who_am_i = -1,
+    imu_abort = -2,
+    imu_I_dont_know_who_am_i = -3,
 }IMU_status;
 
 typedef struct//RAW ACCELERATION DATA
@@ -43,7 +49,6 @@ typedef struct//RAW DATA
     float Abz;
 }MeasureAcel;
 
-IMU_msgID get_calibration_status();
 int32_t imu_avg(int32_t data);
 void imu_calib_light(void);
 void imu_task(void *arg);

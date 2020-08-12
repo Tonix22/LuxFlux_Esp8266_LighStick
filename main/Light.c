@@ -36,7 +36,7 @@ void app_main(void)
     write_to_idle();
     /*Task*/
     Ligth_init();
-    //imu_init();
+    imu_init();
 
     #if IMU_TEST
     IMU_msgID msg = IMU_START_CALIBRATION;

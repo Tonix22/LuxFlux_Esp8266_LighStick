@@ -83,6 +83,8 @@ class FeatureBehaviour
         this->effect = effect;
         file_mask  = file_exist(this->effect);
         file_found = (file_mask & EMPTYFILE);
+        clear_file_cursor();
+
     }
     void load_feature_file()
     {
@@ -104,6 +106,7 @@ class IDLE_Light : public FeatureBehaviour
     EventBits_t menu_mask = 0;
     IDLE_Light(feature_t mode)
     {
+        printf("IDLE\r\n");
         check_file(mode);
     }
     void run_feature_read()
@@ -128,6 +131,19 @@ class Riht_Light : public FeatureBehaviour
     ~Riht_Light(){Set_Frames_buffer(10);}
 };
 
+class Circular_Light: public FeatureBehaviour
+{
+    public:
+    Circular_Light(feature_t mode)
+    {
+        check_file(mode);
+    }
+    void run_feature_read()
+    {
+
+    }
+};
+
 
 
 class DispMenu
@@ -138,7 +154,7 @@ class DispMenu
                             {idle_subtask,    &(screens[RITH] ), IDLE },
                             {rith_subtask,    &(screens[CIRC] ), RITH },
                             {circular_subtask,&(screens[LEVEL]), CIRC },
-                            {level_subtask,   &(screens[WIFI]),  LEVEL}, 
+                            {level_subtask,   &(screens[WIFI] ), LEVEL}, 
                             {wifi_subtask,    &(screens[IDLE] ), WIFI },
                             {sync_subtask,    &(screens[IDLE] ), SYNC },
                         };             
@@ -162,6 +178,7 @@ class DispMenu
     //a way to acces to a function by index
     void operator[](std::size_t idx)
     {
+        this->screen = &(screens[idx]);
         xTaskCreate(this->screen->val, names[idx], 2048, NULL, 5, NULL);
         //screens[idx].val(); //go to screen
     }
@@ -170,7 +187,7 @@ class DispMenu
         //this->screen->val();
         xTaskCreate(this->screen->val, names[this->screen->id], 2048, NULL, 5, NULL);
     }
-    inline void first_time();
+    void first_time();
 
 
 };

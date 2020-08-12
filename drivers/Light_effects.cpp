@@ -60,7 +60,7 @@ void Light_task(void *arg)
                     LedStick->Fade_colors[1] = {255, 128, 0};
                 }
                 Fade_color();
-                imu_msg = IMU_CALIBRATION;
+                imu_msg = IMU_ACK;
                 //printf("Fade\r\n");
                 xQueueSend(imu_light_queue, &imu_msg, 100);
                 break;
@@ -73,7 +73,7 @@ void Light_task(void *arg)
                     LedStick->Fade_colors[1] = {0, 255, 0};
                 }
                 Fade_color();
-                imu_msg = IMU_END_CALIBRATION;
+                imu_msg = IMU_ACK;
                 xQueueSend(imu_light_queue, &imu_msg, 100);
                 break;
             case OFF:
@@ -129,12 +129,6 @@ EventBits_t IDLE_light()
     hw_timer_deinit();
     LedStick->sequence.clear();
     xEventGroupClearBits(Menu_status,IDLE_BUFFER_END);
-    
-    if(wait_buffer & ABORT)
-    {
-        LedStick->Led_stick_off();
-        clear_file_cursor();
-    }
     return wait_buffer;
 }
 

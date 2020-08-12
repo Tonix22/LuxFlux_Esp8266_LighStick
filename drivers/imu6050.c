@@ -11,7 +11,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
 #include "FreeRTOS_wrapper.h"
 
 #include "esp_log.h"
@@ -51,7 +50,8 @@ int32_t aux;
 int32_t* RAWptr = &RAW.Abx;
 int32_t* Offsetptr = &Offset.Abx;
 
-IMU_msgID calib_status;
+EventGroupHandle_t calib_flags;
+EventBits_t calib_status;
 
 /**
  * TEST CODE BRIEF
@@ -231,15 +231,23 @@ static esp_err_t i2c_example_master_mpu6050_init(i2c_port_t i2c_num)
     vTaskDelay(100 / portTICK_RATE_MS);
     i2c_example_master_init();
     cmd_data = 0x00;    // reset mpu6050
-    ESP_ERROR_CHECK(i2c_example_master_mpu6050_write(i2c_num, PWR_MGMT_1, &cmd_data, 1));
-    cmd_data = 0x07;    // Set the SMPRT_DIV sample rate to 1kHz
-    ESP_ERROR_CHECK(i2c_example_master_mpu6050_write(i2c_num, SMPLRT_DIV, &cmd_data, 1));
-    cmd_data = 0x06;    // Set the Low Pass Filter to 5Hz bandwidth
-    ESP_ERROR_CHECK(i2c_example_master_mpu6050_write(i2c_num, CONFIG, &cmd_data, 1));
-    cmd_data = 0x18;    // Set the GYRO range to ± 2000 °/s 
-    ESP_ERROR_CHECK(i2c_example_master_mpu6050_write(i2c_num, GYRO_CONFIG, &cmd_data, 1));
-    cmd_data = 0x01;    // Set the ACCEL range to ± 2g 
-    ESP_ERROR_CHECK(i2c_example_master_mpu6050_write(i2c_num, ACCEL_CONFIG, &cmd_data, 1));
+    esp_err_t err = i2c_example_master_mpu6050_write(i2c_num, PWR_MGMT_1, &cmd_data, 1);
+    if(err == ESP_OK)
+    {
+        cmd_data = 0x07;    // Set the SMPRT_DIV sample rate to 1kHz
+        ESP_ERROR_CHECK(i2c_example_master_mpu6050_write(i2c_num, SMPLRT_DIV, &cmd_data, 1));
+        cmd_data = 0x06;    // Set the Low Pass Filter to 5Hz bandwidth
+        ESP_ERROR_CHECK(i2c_example_master_mpu6050_write(i2c_num, CONFIG, &cmd_data, 1));
+        cmd_data = 0x18;    // Set the GYRO range to ± 2000 °/s 
+        ESP_ERROR_CHECK(i2c_example_master_mpu6050_write(i2c_num, GYRO_CONFIG, &cmd_data, 1));
+        cmd_data = 0x01;    // Set the ACCEL range to ± 2g 
+        ESP_ERROR_CHECK(i2c_example_master_mpu6050_write(i2c_num, ACCEL_CONFIG, &cmd_data, 1));
+        xEventGroupSetBits(calib_flags, IMU_HAS_CONECTION);
+    }
+    else
+    {
+        xEventGroupSetBits(calib_flags, IMU_NOT_CONNECT);
+    }
     return ESP_OK;
 }
 /**
@@ -256,12 +264,14 @@ void imu_init(void)
  * */
 void imu_task(void *arg)
 {
+    calib_flags = xEventGroupCreate();
     //init I2C driver
     i2c_example_master_mpu6050_init(I2C_NUM_0);
     /*imu light is for message light*/
     imu_light_queue = xQueueCreate(10, sizeof(uint32_t));
     /*imu cntrl for external comunication with IMU*/
     imu_cntrl_queue = xQueueCreate(10, sizeof(uint32_t));
+    
 
     while (1) 
     {
@@ -273,13 +283,15 @@ void imu_task(void *arg)
                 imu_calib_light();
                 break;
             case IMU_CIRCULAR_DRAW:
-                if(calib_status != IMU_ABORT_CALIBRATION)
+                calib_status = xEventGroupGetBits(calib_flags);
+                if((calib_status & SUCESS_CALIB))
                 {
                     printf("here draw a circule\r\n");
                 }
                 break;
             case IMU_LINEAR_DRAW:
-                if(calib_status != IMU_ABORT_CALIBRATION)
+                calib_status = xEventGroupGetBits(calib_flags);
+                if((calib_status & SUCESS_CALIB))
                 {
                     printf("here draw a line\r\n");
                 }
@@ -309,7 +321,7 @@ void imu_calib_light(void)
         printf("Sensor num: %i \r\n", cnt);
         calibration_status = calibrate_sensor(cnt);
 
-        if(calibration_status == imu_err)
+        if(calibration_status != imu_ok)
         {
             break;
         }
@@ -324,26 +336,32 @@ void imu_calib_light(void)
                 printf(" message failed 2\r\n");
                 break;
             }
-            vTaskDelay(60/ portTICK_RATE_MS);
+            vTaskDelay(20/ portTICK_RATE_MS);
             xQueueReceive(imu_light_queue, &imu_to_led_msg, portMAX_DELAY);
         }
         imu_to_led_msg = OFF;
         xQueueSend(Light_event, &imu_to_led_msg, 0);
-        calib_status = IMU_END_CALIBRATION;
+        xEventGroupSetBits(calib_flags, SUCESS_CALIB);
     }
     else
     {
-        printf("CHECK IMU CONECTION PLEASE OR RETRY CALIBRATION\r\n");
-        imu_to_led_msg = ABORT_CALIBRATION;
-        xQueueSend(Light_event, &imu_to_led_msg, 0);
-        calib_status = IMU_ABORT_CALIBRATION;
+        if(calibration_status == imu_err || 
+           calibration_status == imu_I_dont_know_who_am_i)
+        {
+            printf("CHECK IMU CONECTION PLEASE OR RETRY CALIBRATION\r\n");
+            imu_to_led_msg = ABORT_CALIBRATION;
+            xQueueSend(Light_event, &imu_to_led_msg, 0);
+        }
+        else
+        {
+            imu_to_led_msg = OFF;
+            xQueueSend(Light_event, &imu_to_led_msg, 0);
+        }
+        xEventGroupSetBits(calib_flags, TERMINATED);
     }
 
 }
-IMU_msgID get_calibration_status()
-{
-    return calib_status;
-}
+
 /**
  * @brief Calibration procedure
  * @param sensor_num Acel x,Acel y, Acel z, TEMP, Gyro x ,Gyro y ,Gyro z
@@ -359,7 +377,6 @@ int calibrate_sensor(int sensor_num)
     uint8_t sensor_data[14]; // array to save all sensors measurements
     uint8_t sensor_idx     = (sensor_num*2);
     uint8_t sensor_address = ACCEL_XOUT_H + sensor_idx;
-    IMU_msgID abort;
     int status = 0; //auxiliar variable
 
     who_am_i = 0;
@@ -368,7 +385,8 @@ int calibrate_sensor(int sensor_num)
     //check if the conection is correct
     if (0x68 == who_am_i) 
     {
-        calib_status = IMU_CALIBRATION; 
+        xEventGroupSetBits(calib_flags, INPROGRESS_CALIB);
+
         memset(sensor_data, 0, 14);
         for(int cnt = 0; cnt < CALIB_MAX; cnt++)
         {
@@ -391,14 +409,18 @@ int calibrate_sensor(int sensor_num)
                 }
             }
             xQueueReceive(imu_light_queue, &imu_to_led_msg, portMAX_DELAY);
-            xQueueReceive(imu_cntrl_queue,&abort,0);
-            if(abort == IMU_ABORT_CALIBRATION)
+
+            calib_status = xEventGroupGetBits(calib_flags);
+
+            if(calib_status & ABORT_CALIB)
             {
-                calib_status = IMU_ABORT_CALIBRATION;
+                xEventGroupClearBits(calib_flags,ABORT_CALIB);
+                xEventGroupSetBits(calib_flags,TERMINATED);
                 return imu_abort;
             }
+
             imu_to_led_msg = CALIBRATION;
-            vTaskDelay(60 / portTICK_RATE_MS);
+            vTaskDelay(20 / portTICK_RATE_MS);
         }
         (*Offsetptr)/=1000;
         printf("%s %d \r\n", sensor_log[sensor_num],*Offsetptr);
