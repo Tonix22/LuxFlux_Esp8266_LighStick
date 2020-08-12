@@ -196,7 +196,10 @@ void Set_Frames_buffer(uint8_t frames)
 {
     LedStick->max_frames = frames;
 }
-
+void Pixels_OFF()
+{
+    LedStick->Led_stick_off();
+}
 
 /*
 void Pixel_rainbow_Fade(void)

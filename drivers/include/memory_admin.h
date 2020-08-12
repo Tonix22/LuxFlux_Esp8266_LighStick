@@ -14,7 +14,8 @@ extern "C"
 {
 #endif
     #include "structs.h"
-    void file_exist(feature_t feature);
+    #include "FreeRTOS_wrapper.h"
+    EventBits_t file_exist(feature_t feature);
     void file_read(feature_t feature);
     void init_flash_status_group(void);
     #ifdef __cplusplus

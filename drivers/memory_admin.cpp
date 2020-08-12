@@ -27,12 +27,13 @@ void init_flash_status_group(void)
     Flash_status = xEventGroupCreate();
 }
 
-void file_exist(feature_t feature)
+EventBits_t file_exist(feature_t feature)
 {
     if(!check_file_exist(File_names[feature]))
     {
         xEventGroupSetBits(Flash_status, EMPTYFILE);
     }
+    return xEventGroupGetBits(Flash_status);
 }
 
 void file_read(feature_t feature)

@@ -17,11 +17,10 @@ using namespace std;
 DispMenu Menu;
 gpio_num_t io_num;
 int pressed = 0;
+EventGroupHandle_t Menu_status;
 
 extern xQueueHandle imu_cntrl_queue;
 extern xQueueHandle Light_event;
-extern EventGroupHandle_t Flash_status;
-EventGroupHandle_t Menu_status;
 
 void calib_and_cmd(IMU_msgID action)
 {
@@ -47,9 +46,16 @@ void abort_if_needed()
         xQueueSend(imu_cntrl_queue, &msg, 10/ portTICK_RATE_MS);
     }
 }
+void abort_last_menu()
+{
+    xEventGroupSetBits(Menu_status, ABORT);
+    
+    EventBits_t kill = xEventGroupWaitBits(Menu_status,TASKDEATH,
+            pdTRUE,// Clear Flag
+            pdFALSE,portMAX_DELAY); // wait until IDLE Task is death
+}
 
-// functions
-void idle_subtask(void *arg)
+inline void DispMenu::first_time()
 {
     static bool fts = true;
     if(fts)//first call of all
@@ -58,56 +64,46 @@ void idle_subtask(void *arg)
         while(Light_event == NULL){vTaskDelay(50 / portTICK_RATE_MS);} // wait light task to be ready
         fts = false;// only acces once
     }
-    
-    file_exist(IDLE_feature);
+}
 
-    EventBits_t file_mask = xEventGroupGetBits(Flash_status);
-    
-    if(!(file_mask & EMPTYFILE))
+void Process_feature(FeatureBehaviour* feature)
+{
+    if(feature->file_found == CLEAR_BIT)
     {
-        EventBits_t menu_mask = xEventGroupGetBits(Menu_status);
         do{
-            file_read(IDLE_feature);
-            file_mask = xEventGroupGetBits(Flash_status);
-            if(!(file_mask & BAD_FORMAT))
+            feature->load_feature_file();
+            if(feature->load_status == CLEAR_BIT)
             {
-                menu_mask = IDLE_light();
+                feature->run_feature_read();
             }
-
-        }while(!(menu_mask & ABORT));
+        }while(feature->cyclic == CLEAR_BIT);
     }
     DEBUG_EMPTY_FILE();
 
-    xEventGroupClearBits(Flash_status,BAD_FORMAT|EMPTYFILE);
-    xEventGroupSetBits(Menu_status,TASKDEATH);
+    delete(feature);
+}
 
+// functions
+void idle_subtask(void *arg)
+{
+    Menu.first_time(); // wait to light task init
+    IDLE_Light* idle_proc = new IDLE_Light(IDLE_feature);
+    
+    Process_feature(idle_proc);
+
+    xEventGroupSetBits(Menu_status,TASKDEATH);
     vTaskDelete(NULL);
 }
 
 void rith_subtask(void *arg)
 {
-    xEventGroupSetBits(Menu_status, ABORT);
-
-    EventBits_t kill = xEventGroupWaitBits(Menu_status,
-            TASKDEATH,
-            pdTRUE,// Clear Flag
-            pdFALSE,
-            portMAX_DELAY); // wait until Task is death
-
-    file_exist(RITH_feature);
-    EventBits_t file_mask = xEventGroupGetBits(Flash_status);
-    if(!(file_mask & EMPTYFILE))
-    {
-        Set_Frames_buffer(20);
-        file_read(RITH_feature);
-        file_mask = xEventGroupGetBits(Flash_status);
-        if(!(file_mask & BAD_FORMAT))
-        {
-            input_IO_enable_isr(GPIO_SDD2, GPIO_INTR_NEGEDGE);
-        }
-    }
-    Set_Frames_buffer(10);
+    abort_last_menu();
+    
+    Riht_Light* rith_proc = new Riht_Light(RITH_feature);
+    Process_feature(rith_proc);
+    
     cout<<"rith_subtask"<<endl;
+    
     vTaskDelete(NULL);
 }
 

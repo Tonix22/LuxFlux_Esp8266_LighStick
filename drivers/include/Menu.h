@@ -18,10 +18,16 @@ void sync_action(TimerHandle_t xTimer );
 #include "FreeRTOS_wrapper.h"
 #include "wifi.h"
 #include "config.h"
+#include "structs.h"
+#include "memory_admin.h"
+#include "Light_effects.h"
 
 #define ABORT BIT0
 #define TASKDEATH BIT1
 #define IDLE_BUFFER_END BIT2
+
+#define CLEAR_BIT 0
+#define SET_BIT 1
 
 #if DEBUG_MENU
 #define DEBUG_EMPTY_FILE()  else\
@@ -31,6 +37,9 @@ void sync_action(TimerHandle_t xTimer );
 #else
 #define DEBUG_EMPTY_FILE()
 #endif
+
+
+extern EventGroupHandle_t Flash_status;
 
 typedef void (*foo_ptr)(void *);
 struct Node
@@ -57,6 +66,69 @@ void circular_subtask(void *arg);
 void level_subtask(void *arg);
 void wifi_subtask(void *arg);
 void sync_subtask(void *arg);
+
+class FeatureBehaviour 
+{ 
+    public:
+    feature_t   effect;
+    EventBits_t file_mask;
+    bool file_found;
+    bool load_status;
+    bool cyclic;
+
+    virtual void run_feature_read()   = 0;
+
+    void check_file(feature_t& effect)
+    {
+        this->effect = effect;
+        file_mask  = file_exist(this->effect);
+        file_found = (file_mask & EMPTYFILE);
+    }
+    void load_feature_file()
+    {
+        file_read(effect);
+        file_mask   = xEventGroupGetBits(Flash_status);
+        load_status = (file_mask & BAD_FORMAT);
+    }
+
+    virtual ~FeatureBehaviour()
+    {
+        clear_file_cursor();
+        Pixels_OFF();
+        xEventGroupClearBits(Flash_status,BAD_FORMAT|EMPTYFILE);
+    }
+};
+class IDLE_Light : public FeatureBehaviour
+{   
+    public:
+    EventBits_t menu_mask = 0;
+    IDLE_Light(feature_t mode)
+    {
+        check_file(mode);
+    }
+    void run_feature_read()
+    {
+        menu_mask = IDLE_light();
+        cyclic    = (menu_mask & ABORT);
+    }
+};
+class Riht_Light : public FeatureBehaviour
+{
+    public: 
+    Riht_Light(feature_t mode)
+    {
+        Set_Frames_buffer(20);
+        check_file(mode);
+    }
+    void run_feature_read()
+    {
+        input_IO_enable_isr(GPIO_SDD2, GPIO_INTR_NEGEDGE);
+        cyclic = SET_BIT;
+    }
+    ~Riht_Light(){Set_Frames_buffer(10);}
+};
+
+
 
 class DispMenu
 {
@@ -98,6 +170,9 @@ class DispMenu
         //this->screen->val();
         xTaskCreate(this->screen->val, names[this->screen->id], 2048, NULL, 5, NULL);
     }
+    inline void first_time();
+
+
 };
 
 }

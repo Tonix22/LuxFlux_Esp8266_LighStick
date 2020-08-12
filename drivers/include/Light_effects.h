@@ -27,6 +27,7 @@ extern "C"
     void Fade_color(void);
     void Fade_colorG(void);
     void Pixel_rainbow_Fade(void);
+    void Pixels_OFF();
     EventBits_t IDLE_light();
     void Set_Frames_buffer(uint8_t frames);
     #ifdef __cplusplus
