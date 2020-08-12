@@ -18,6 +18,7 @@ void sync_action(TimerHandle_t xTimer );
 #include "FreeRTOS_wrapper.h"
 #include "wifi.h"
 #include "tcp_server.h"
+#include "tcp_client.h"
 typedef void (*foo_ptr)(void *);
 struct Node
 {
