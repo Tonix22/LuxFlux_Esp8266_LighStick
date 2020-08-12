@@ -42,6 +42,7 @@ void app_main(void)
     IMU_msgID msg = IMU_START_CALIBRATION;
     vTaskDelay(1000/ portTICK_RATE_MS);
     xQueueSend(imu_cntrl_queue, &msg, 10/ portTICK_RATE_MS);
+    Position(10000);
     #endif
 
     for(;;)

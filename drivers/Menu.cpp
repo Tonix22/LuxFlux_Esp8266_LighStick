@@ -161,7 +161,7 @@ void wifi_subtask(void *arg)
     cout<<"wifi_subtask"<<endl;
     abort_calib();
     
-    //wifi_init_softap();
+    wifi_init_softap();
 
     vTaskDelete(NULL);
 }

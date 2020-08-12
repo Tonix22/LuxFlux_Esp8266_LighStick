@@ -21,6 +21,7 @@ void sync_action(TimerHandle_t xTimer );
 #include "structs.h"
 #include "memory_admin.h"
 #include "Light_effects.h"
+#include "tcp_server.h"
 
 #define ABORT BIT0
 #define TASKDEATH BIT1
@@ -40,6 +41,7 @@ void sync_action(TimerHandle_t xTimer );
 
 
 extern EventGroupHandle_t Flash_status;
+
 
 typedef void (*foo_ptr)(void *);
 struct Node
