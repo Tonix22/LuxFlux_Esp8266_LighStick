@@ -27,6 +27,7 @@
 #define AUTOCONNECT (0)
 
 
+
 //This defines changes depending on upper defines
 #if !RIGHT_STICK && !LEFT_STICK
     #error "MUST SELECT A LEDSTICK"
