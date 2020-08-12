@@ -12,6 +12,7 @@
 #include "Light_effects.h"
 #include "memory_admin.h"
 
+
 using namespace std;
 
 DispMenu Menu;
@@ -155,7 +156,14 @@ void level_subtask(void *arg)
     
     vTaskDelete(NULL);
 }
+/*
+PROBAR CLIENTE
+    1.sacar IP de compu
+    2. Ponersela al ejemplod el cliente
+    3.Iniciarlizar Socket Test como server NOTA: ver mensajes que recibe el cliente
 
+PROBAR AMBOS MICROS
+*/
 void wifi_subtask(void *arg)
 {
     cout<<"wifi_subtask"<<endl;
@@ -164,10 +172,12 @@ void wifi_subtask(void *arg)
     #if WIFI_TEST
     wifi_init_sta();
     #else
-    wifi_init_softap();
+    wifi_init_softap(); //original
     #endif
 
     server_init();
+    //TODO APAGAR WIFI
+    //TODO MATAR SERVER
 
 }
 
@@ -175,6 +185,14 @@ void sync_subtask(void *arg)
 {
     cout<<"sync_subtask"<<endl;
     input_IO_disable_isr(GPIO_SDD2);
+
+    //TODO conectar a station
+    wifi_init_sta();
+    //TODO iniciar cliente
+    client_init();
+    //TODO APAGAR WIFI
+    //TODO MATAR CLIENTE
+
     vTaskDelete(NULL);
 }
 

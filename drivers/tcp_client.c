@@ -28,7 +28,24 @@
 
 
 static const char *TAG = "example";
-static const char *payload = "Message from ESP32 ";
+char *payload = "Message from ESP32 ";
+int sock;
+int send_msg(const char * msg){
+    int err = send(sock, msg, strlen(msg), 0);
+    if (err < 0) {
+        ESP_LOGE(TAG, "Error occured during sending: errno %d", errno);
+    }
+    return err;
+}
+
+int recv_msg(char* msg, int lenght){
+    int len = recv(sock, msg, lenght-1, 0);
+        // Error occured during receiving
+    if (len < 0) {
+        ESP_LOGE(TAG, "recv failed: errno %d", errno);
+    }
+    return len;
+}
 
 static void tcp_client_task(void *pvParameters)
 {
@@ -49,7 +66,7 @@ static void tcp_client_task(void *pvParameters)
         inet_ntoa_r(destAddr.sin_addr, addr_str, sizeof(addr_str) - 1);
 
 
-        int sock =  socket(addr_family, SOCK_STREAM, ip_protocol);
+         sock =  socket(addr_family, SOCK_STREAM, ip_protocol);
         if (sock < 0) {
             ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
             break;
@@ -62,24 +79,37 @@ static void tcp_client_task(void *pvParameters)
         }
         ESP_LOGI(TAG, "Successfully connected");
 
-        while (1) {
-            int err = send(sock, payload, strlen(payload), 0);
-            if (err < 0) {
-                ESP_LOGE(TAG, "Error occured during sending: errno %d", errno);
-                break;
-            }
+        /************** SEND FIRST MESSAGE ******************/
+        
+        while(send_msg("SYNC\n")<0){
+                vTaskDelay(1000/ portTICK_RATE_MS);    
+        }
 
-            int len = recv(sock, rx_buffer, sizeof(rx_buffer) - 1, 0);
-            // Error occured during receiving
-            if (len < 0) {
-                ESP_LOGE(TAG, "recv failed: errno %d", errno);
-                break;
+        /************** MESSAGE FROM SERVER ******************/
+        int len = recv_msg(rx_buffer,sizeof(rx_buffer));
+        if (len > 0) {
+            rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string
+            ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
+            ESP_LOGI(TAG, "%s", rx_buffer);
+                
+            if(strcmp (rx_buffer, "READY TO SYNC\n") == 0){
+             send_msg("CHUNK :)\n");
             }
-            // Data received
-            else {
+        }
+       
+ 
+        while (1) {
+          
+            if (recv_msg(rx_buffer,sizeof(rx_buffer)) > 0) {
                 rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string
                 ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
                 ESP_LOGI(TAG, "%s", rx_buffer);
+                
+                if(strcmp (rx_buffer, "ACK\n") == 0){
+                    send_msg("CHUNK :)\n");
+                }else{
+                    break;
+                }
             }
 
             vTaskDelay(2000 / portTICK_PERIOD_MS);

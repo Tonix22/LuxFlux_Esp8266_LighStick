@@ -14,7 +14,7 @@
 
 #define PIXEL_TEST  (0)
 
-#define WIFI_TEST   (1)
+#define WIFI_TEST   (0)
 
 #define AP_PASS      "DiaboloSticks"
 #define MAX_STA_CONN       4
