@@ -68,11 +68,9 @@ static void tcp_server_task(void *pvParameters)
         }
         ESP_LOGI(TAG, "Socket listening");
 
-#ifdef CONFIG_EXAMPLE_IPV6
-        struct sockaddr_in6 sourceAddr; // Large enough for both IPv4 or IPv6
-#else
+
         struct sockaddr_in sourceAddr;
-#endif
+
         uint addrLen = sizeof(sourceAddr);
         int sock = accept(listen_sock, (struct sockaddr *)&sourceAddr, &addrLen);
         if (sock < 0) {
@@ -95,22 +93,15 @@ static void tcp_server_task(void *pvParameters)
             }
             // Data received
             else {
-#ifdef CONFIG_EXAMPLE_IPV6
-                // Get the sender's ip address as string
-                if (sourceAddr.sin6_family == PF_INET) {
-                    inet_ntoa_r(((struct sockaddr_in *)&sourceAddr)->sin_addr.s_addr, addr_str, sizeof(addr_str) - 1);
-                } else if (sourceAddr.sin6_family == PF_INET6) {
-                    inet6_ntoa_r(sourceAddr.sin6_addr, addr_str, sizeof(addr_str) - 1);
-                }
-#else
+
                 inet_ntoa_r(((struct sockaddr_in *)&sourceAddr)->sin_addr.s_addr, addr_str, sizeof(addr_str) - 1);
-#endif
+
 
                 rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string
                 ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
                 ESP_LOGI(TAG, "%s", rx_buffer);
 
-                int err = send(sock, rx_buffer, len, 0);
+                int err = send(sock, "ACK", 4, 0);
                 if (err < 0) {
                     ESP_LOGE(TAG, "Error occured during sending: errno %d", errno);
                     break;

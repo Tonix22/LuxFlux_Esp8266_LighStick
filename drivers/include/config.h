@@ -14,6 +14,8 @@
 
 #define PIXEL_TEST  (0)
 
+#define WIFI_TEST   (0)
+
 #define AP_PASS      "DiaboloSticks"
 #define MAX_STA_CONN       4
 
@@ -24,7 +26,7 @@
 #endif
 
 #define ESP_MAXIMUM_RETRY  10
-#define AUTOCONNECT (0)
+#define AUTOCONNECT (1)
 
 
 
@@ -49,8 +51,16 @@
 
 #endif
 
+
 #if LEFT_STICK
+
     #define AP_SSID      "LuxFLUX_LEFT"
+
+    #if !WIFI_HOME
+    
+    #define ESP_WIFI_SSID      "LuxFLUX_RIGHT"
+    #define ESP_WIFI_PASS      "DiaboloSticks"
+    #endif
         //TCP
     #define HOST_IP_ADDR RIGHT_STICK_IP
     

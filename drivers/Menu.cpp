@@ -160,10 +160,15 @@ void wifi_subtask(void *arg)
 {
     cout<<"wifi_subtask"<<endl;
     abort_calib();
-    
-    wifi_init_softap();
 
-    vTaskDelete(NULL);
+    #if WIFI_TEST
+    wifi_init_sta();
+    #else
+    wifi_init_softap();
+    #endif
+
+    server_init();
+
 }
 
 void sync_subtask(void *arg)
