@@ -178,7 +178,7 @@ void wifi_subtask(void *arg)
     server_init();
     //TODO APAGAR WIFI
     //TODO MATAR SERVER
-
+    vTaskDelete(NULL);
 }
 
 void sync_subtask(void *arg)

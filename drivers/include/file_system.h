@@ -19,10 +19,10 @@
 
 #define DIR(NAME) BASE_PATH"/"#NAME".bin"
 
-#define IDLE_FILE DIR(IDLE) // /spiffs/IDLE.txt
-#define RITH_FILE DIR(RITH) // /spiffs/RITH.txt
-#define CIRC_FILE DIR(CIRC) // /spiffs/CIRC.txt
-#define LINE_FILE DIR(LINE) // /spiffs/LINE.txt
+#define IDLE_FILE DIR(IDLE) // /spiffs/IDLE.bin
+#define RITH_FILE DIR(RITH) // /spiffs/RITH.bin
+#define CIRC_FILE DIR(CIRC) // /spiffs/CIRC.bin
+#define LINE_FILE DIR(LINE) // /spiffs/LINE.bin
 
 
 
