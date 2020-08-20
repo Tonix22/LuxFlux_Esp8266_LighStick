@@ -21,8 +21,8 @@
 
 //STATION CONFIG
 #if WIFI_HOME
-#define ESP_WIFI_SSID      "DEPTO_201"
-#define ESP_WIFI_PASS      "sxk!0363"
+#define ESP_WIFI_SSID      "IZZI-99CD"
+#define ESP_WIFI_PASS      "704FB81799CD"
 #endif
 
 #define ESP_MAXIMUM_RETRY  10

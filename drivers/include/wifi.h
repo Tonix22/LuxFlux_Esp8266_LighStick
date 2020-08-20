@@ -11,8 +11,10 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 
+
 void wifi_init_sta(void);
 void wifi_init_softap(void);
+void wifi_deint(wifi_mode_t mode);
 void WIFI_ON(void);
 void WIFI_OFF(void);
 #endif

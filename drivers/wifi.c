@@ -37,10 +37,8 @@ static void event_handler(void* arg, esp_event_base_t event_base,
                           int32_t event_id, void* event_data)
 {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) 
-    {
-        #if AUTOCONNECT
+    { 
         esp_wifi_connect();
-        #endif
     } 
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) 
     {
@@ -83,8 +81,6 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
 void wifi_init_sta(void)
 {
     s_wifi_event_group = xEventGroupCreate();
-    
-    ESP_ERROR_CHECK(nvs_flash_init());
 
     tcpip_adapter_init();
 
@@ -92,9 +88,6 @@ void wifi_init_sta(void)
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-
-    esp_wifi_stop();
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
 
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL));
@@ -114,11 +107,12 @@ void wifi_init_sta(void)
         wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
     }
 
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
     ESP_ERROR_CHECK(esp_wifi_start() );
 
     ESP_LOGI(TAG, "wifi_init_sta finished.");
-    #if AUTOCONNECT
+    //#if AUTOCONNECT
     /* Waiting until either the connection is established (WIFI_CONNECTED_BIT) or connection failed for the maximum
      * number of re-tries (WIFI_FAIL_BIT). The bits are set by event_handler() (see above) */
     EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
@@ -142,8 +136,9 @@ void wifi_init_sta(void)
     ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler));
     ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler));
     vEventGroupDelete(s_wifi_event_group);
-    #endif
+    //#endif
 }
+
 
 void wifi_init_softap(void)
 {
@@ -192,6 +187,17 @@ void wifi_init_softap(void)
     #endif
 
 
+}
+
+void wifi_deint(wifi_mode_t mode)
+{
+    esp_wifi_stop();
+    esp_event_loop_delete_default();
+    esp_wifi_deinit();
+    if(WIFI_MODE_AP == mode)
+    {
+        esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler);
+    }
 }
 
 void WIFI_ON(void)

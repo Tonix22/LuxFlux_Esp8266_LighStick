@@ -156,6 +156,17 @@ void level_subtask(void *arg)
     
     vTaskDelete(NULL);
 }
+void wifi_hold()
+{
+    printf("Wait 20 secs\r\n");
+    for(int i =0; i < 20; i++)
+    {
+        vTaskDelay(1000 / portTICK_RATE_MS);
+        printf("sec: %d\r\n",i);
+    }
+    printf("WIFI WILL DEATH\r\n");
+}
+
 /*
 PROBAR CLIENTE
     1.sacar IP de compu
@@ -174,8 +185,10 @@ void wifi_subtask(void *arg)
     #else
     wifi_init_softap(); //original
     #endif
-    //vTaskDelay(10000 / portTICK_RATE_MS);
-    //esp_wifi_deinit();
+    
+    wifi_hold();
+
+    wifi_deint(WIFI_MODE_AP);
     //server_init();
     //TODO APAGAR WIFI
     //TODO MATAR SERVER
@@ -189,8 +202,10 @@ void sync_subtask(void *arg)
 
     //TODO conectar a station
     wifi_init_sta();
+    wifi_hold();
+    wifi_deint(WIFI_MODE_STA);
     //TODO iniciar cliente
-    client_init();
+    //client_init();
     //TODO APAGAR WIFI
     //TODO MATAR CLIENTE
 
