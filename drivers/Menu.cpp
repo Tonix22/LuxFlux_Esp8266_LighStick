@@ -174,8 +174,9 @@ void wifi_subtask(void *arg)
     #else
     wifi_init_softap(); //original
     #endif
-
-    server_init();
+    //vTaskDelay(10000 / portTICK_RATE_MS);
+    //esp_wifi_deinit();
+    //server_init();
     //TODO APAGAR WIFI
     //TODO MATAR SERVER
     vTaskDelete(NULL);

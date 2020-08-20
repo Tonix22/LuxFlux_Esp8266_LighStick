@@ -95,7 +95,7 @@ void Ligth_init(void)
 void IDLE_HW_TIMER(void *arg)
 {
     static int i = 0;
-    
+    taskDISABLE_INTERRUPTS();
     for(auto& group: LedStick->seq_it->group)
     {
         for(i = 0; i < group.pixels; i++)
@@ -112,6 +112,7 @@ void IDLE_HW_TIMER(void *arg)
     {
         xEventGroupSetBits(Menu_status,IDLE_BUFFER_END);
     }
+    taskENABLE_INTERRUPTS();
 }
 
 EventBits_t IDLE_light()
