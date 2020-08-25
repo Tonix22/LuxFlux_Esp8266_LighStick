@@ -87,7 +87,7 @@ void DispMenu::first_time()
         fts = false;// only acces once
     }
 }
-
+/*Get polimorfic behavior of the classes*/
 void Process_feature(FeatureBehaviour* feature)
 {
     if(feature->file_found == CLEAR_BIT)
@@ -156,16 +156,36 @@ void level_subtask(void *arg)
     
     vTaskDelete(NULL);
 }
+
+
+
 void wifi_hold()
 {
-    printf("Wait 20 secs\r\n");
-    for(int i =0; i < 20; i++)
+    printf("Wait 10 secs\r\n");
+    for(int i =0; i < 10; i++)
     {
         vTaskDelay(1000 / portTICK_RATE_MS);
         printf("sec: %d\r\n",i);
     }
     printf("WIFI WILL DEATH\r\n");
 }
+
+
+void Process_Wifi_Comm(Channel* feature)
+{   
+    feature->clear_last_menu();  //Clear last calls
+    feature->init_wifi_service();//AP or Station
+    feature->init_comm_service();//Client or server
+    do
+    {   
+        feature->state = STOP; //TODO testing porpuose
+        wifi_hold();
+
+    }while(feature->state != STOP);
+    
+    delete(feature);
+}
+
 
 /*
 PROBAR CLIENTE
@@ -178,37 +198,16 @@ PROBAR AMBOS MICROS
 void wifi_subtask(void *arg)
 {
     cout<<"wifi_subtask"<<endl;
-    abort_calib();
-
-    #if WIFI_TEST
-    wifi_init_sta();
-    #else
-    wifi_init_softap(); //original
-    #endif
-    
-    wifi_hold();
-
-    wifi_deint(WIFI_MODE_AP);
-    //server_init();
-    //TODO APAGAR WIFI
-    //TODO MATAR SERVER
+    Reciever* protocol = new Reciever;
+    Process_Wifi_Comm(protocol);
     vTaskDelete(NULL);
 }
 
 void sync_subtask(void *arg)
 {
     cout<<"sync_subtask"<<endl;
-    input_IO_disable_isr(GPIO_SDD2);
-
-    //TODO conectar a station
-    wifi_init_sta();
-    wifi_hold();
-    wifi_deint(WIFI_MODE_STA);
-    //TODO iniciar cliente
-    //client_init();
-    //TODO APAGAR WIFI
-    //TODO MATAR CLIENTE
-
+    Transmiter* protocol = new Transmiter;
+    Process_Wifi_Comm(protocol);
     vTaskDelete(NULL);
 }
 

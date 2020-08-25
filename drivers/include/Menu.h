@@ -64,6 +64,10 @@ typedef enum{
 }Screen_t;
 
 //Prototypes
+
+void abort_calib();
+void abort_last_menu();
+
 void idle_subtask(void *arg);
 void rith_subtask(void *arg);
 void circular_subtask(void *arg);
@@ -147,7 +151,80 @@ class Circular_Light: public FeatureBehaviour
 
     }
 };
+typedef enum
+{
+    STOP,
+    RUN,
+}Service_steps;
+class Channel
+{
+    public:
+    Service_steps state = RUN;
+    virtual void clear_last_menu()   = 0;
+    virtual void init_wifi_service() = 0;
+    virtual void init_comm_service() = 0;
+    virtual void set_state()         = 0;
+    virtual ~Channel(){}
+};
+class Reciever: public Channel
+{
+    public:
+    Reciever()
+    {
 
+    }
+    void clear_last_menu()
+    {
+        abort_calib();
+        abort_last_menu();
+    }
+    void init_wifi_service()
+    {
+        wifi_init_softap();
+    }
+    void init_comm_service()
+    {
+        //server_init();
+    }
+    void set_state()
+    {
+
+    }
+    ~Reciever()
+    {
+        wifi_deint();
+    }
+};
+class Transmiter: public  Channel
+{
+    public:
+    Transmiter()
+    {
+
+    }
+    void clear_last_menu()
+    {
+        input_IO_disable_isr(GPIO_SDD2);
+        abort_calib();
+    }
+    void init_wifi_service()
+    {
+        wifi_init_sta();
+    }
+    void init_comm_service()
+    {
+        client_init();
+    }
+    void set_state()
+    {
+
+    }
+    ~Transmiter()
+    {
+        esp_restart();
+    }
+
+};
 
 
 class DispMenu
