@@ -258,7 +258,7 @@ class Reciever: public Channel
     {
         //server_init();
     }
-    void set_state()
+    void set_state() // TODO insert logic here
     {
 
     }
@@ -291,9 +291,9 @@ class Transmiter: public  Channel
     {
         client_init();
     }
-    void set_state()
+    void set_state()// TODO insert logic here
     {
-
+    
     }
     ~Transmiter()
     {
