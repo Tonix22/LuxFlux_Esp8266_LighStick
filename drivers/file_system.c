@@ -1,36 +1,30 @@
-/* SPIFFS filesystem example.
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
+/* SPIFFS filesystem
+   This code is in the Public Domain (or CC0 licensed, at your option.)
    Unless required by applicable law or agreed to in writing, this
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
 
+// =============================================================================
+// includes
+// =============================================================================
+
 #include "file_system.h"
 #include "structs.h"
+
+// =============================================================================
+// local variables
+// =============================================================================
 static const char *TAG = "example";
 
-#define WRITE_BLOCK(P,R,G,B) chunk->pixels = P;\
-                             chunk->color.RED   = R;\
-                             chunk->color.GREEN = G;\
-                             chunk->color.BLUE  = B;\
-                             write_chunck(chunk,sizeof(Block),1);\
-                             
-#define WRITE_TIME(t)       time = t;\
-                            write_chunck(&time,sizeof(uint32_t),1);\
-
-#define RGB_8_40ms(R,G,B)  WRITE_BLOCK(8,R,G,B);\
-                           WRITE_TIME(40);\
-
 fpos_t current_pos;
-
 FILE* f;
-char line[64];
 
+/**
+ * @brief Init Flash driver system
+ */
 void file_system_init()
 {
-    //ESP_LOGI(TAG, "Initializing SPIFFS");
-    
     esp_vfs_spiffs_conf_t conf = 
     {
       .base_path = BASE_PATH,
@@ -68,12 +62,23 @@ void file_system_init()
         ESP_LOGI(TAG, "Partition size: total: %d, used: %d", total, used);
     }
 }
+
+/**
+ * @brief Deinit Flash driver system
+ */
 void deinit()
 {
     // All done, unmount partition and disable SPIFFS
     esp_vfs_spiffs_unregister(NULL);
-    //ESP_LOGI(TAG, "SPIFFS unmounted");
 }
+
+/**
+ * @brief 
+ * 
+ * @param name --> file name 
+ * @return true --> file exist
+ * @return false --> file don't exist
+ */
 bool check_file_exist(const char* name)
 {
     struct stat st;
@@ -85,12 +90,21 @@ bool check_file_exist(const char* name)
     //printf("file exist: %s \r\n",state?("Yes"):("NO"));
     return state;
 }
-
+/**
+ * @brief Delete file
+ * This Api shall be call if file exist
+ * @param name 
+ */
 void delete_file(const char* name)
 {
     unlink(name);
 }
-
+/**
+ * @brief Open file
+ * This Api shall be call if file exist
+ * @param r_w 
+ * @param name 
+ */
 void file_open(File_action r_w, const char* name)
 {
     if(f == NULL) // file pointer is not taken
@@ -106,7 +120,13 @@ void file_open(File_action r_w, const char* name)
         }
     }
 }
-
+/**
+ * @brief 
+ * This API shall be call only if file is open
+ * @param data generic data pointer
+ * @param data_type_size size of type
+ * @param data_size size of data
+ */
 void write_chunck(void* data, char data_type_size, int data_size)
 {   
     if(f !=NULL)
@@ -114,6 +134,16 @@ void write_chunck(void* data, char data_type_size, int data_size)
         fwrite (data , data_type_size, data_size, f);
     }
 }
+
+/**
+ * @brief 
+ * 
+ * @param data 
+ * @param data_type_size type size
+ * @param num_of_elements numero of elements to store
+ * @return true --> read Ok
+ * @return false --> end of file detected
+ */
 
 bool read_chunk(void* data, char data_type_size,char num_of_elements)
 {
@@ -136,18 +166,12 @@ bool read_chunk(void* data, char data_type_size,char num_of_elements)
 
     return success_reading;
 }
-void read_line()
-{
-    
-    fgets(line, sizeof(line), f);
-    // strip newline
-    char* pos = strchr(line, '\n');
-    if (pos) {
-        *pos = '\0';
-    }
-    
-}
-
+/**
+ * @brief writ to file as printf does
+ * 
+ * @param format 
+ * @param ... 
+ */
 void write_format_string(const char* format, ...)
 {
     va_list args;
@@ -155,25 +179,63 @@ void write_format_string(const char* format, ...)
     vfprintf(f, format,args);
     va_end(args);
 }
+/**
+ * @brief close file.
+ * Only call if the file was open before
+ */
 void close_file()
 {
     fclose(f);
     f = NULL;
 }
+/**
+ * @brief Move cursor the beging of file
+ * 
+ */
 void clear_file_cursor()
 {
-    current_pos = 0;
+    current_pos = BEGING_OF_FILE;
 }
-
+/**
+ * @brief Save curren cursor pos before close file
+ * it is usefull as checkopint to continue reading
+ */
 void save_current_pos()
 {
     fgetpos(f,&current_pos);
 }
-
+/**
+ * @brief Set cursor at last position set before open the file
+ * 
+ */
 void load_curren_pos()
 {
     fsetpos(f,&current_pos);
 }
+
+// =============================================================================
+/*
+████████╗███████╗███████╗████████╗
+╚══██╔══╝██╔════╝██╔════╝╚══██╔══╝
+   ██║   █████╗  ███████╗   ██║
+   ██║   ██╔══╝  ╚════██║   ██║
+   ██║   ███████╗███████║   ██║
+   ╚═╝   ╚══════╝╚══════╝   ╚═╝
+*/
+// =============================================================================
+
+#define WRITE_BLOCK(P,R,G,B) chunk->pixels = P;\
+                             chunk->color.RED   = R;\
+                             chunk->color.GREEN = G;\
+                             chunk->color.BLUE  = B;\
+                             write_chunck(chunk,sizeof(Block),1);\
+                             
+#define WRITE_TIME(t)       time = t;\
+                            write_chunck(&time,sizeof(uint32_t),1);\
+
+#define RGB_8_40ms(R,G,B)  WRITE_BLOCK(8,R,G,B);\
+                           WRITE_TIME(40);\
+
 
 void write_to_rith()
 {
@@ -264,52 +326,3 @@ void write_to_idle()
     
     #endif
 }
-/*
-
-void Example1()
-{
-    
-    static char buffer[] = { 'x' , 'y' , 'z' , '\n'};
-    static char rcv_buffer[64];
-
-    file_open(WRITE, IDLE_FILE);// First create a file.
-   
-    write_chunck(buffer,sizeof(char),4);
-    write_format_string("Mama soy un pez\n");
-   
-    close_file();
-    //ESP_LOGI(TAG, "File written");
-  
-    // Open renamed file for reading
-
-    file_open(READ, IDLE_FILE);
-
-    read_chunk(rcv_buffer,sizeof(char),64);
-    close_file();
-}
- void Example_struct()
- {
-    Data* chunk =  malloc(sizeof(Data));
-    chunk->B = 30;
-    chunk->G = 50;
-    chunk->R = 240;
-    
-    file_open(WRITE, LINE_FILE);// First create a file.
-
-    write_chunck(chunk,sizeof(Data),1);//only write on struct
-
-    close_file();
-
-    //clear chunk
-    memset(chunk,0,sizeof(Data));
-    //check if was written in flash 
-    file_open(READ, LINE_FILE);
-
-    read_chunk(chunk,sizeof(Data),1);
-    printf("chunk->B: %d\r\n",chunk->B);
-    printf("chunk->G: %d\r\n",chunk->G);
-    printf("chunk->R: %d\r\n",chunk->R);
-
-    free(chunk);
- }
-*/

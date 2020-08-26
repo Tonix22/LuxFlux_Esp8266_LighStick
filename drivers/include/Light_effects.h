@@ -5,7 +5,19 @@
 extern "C" 
 {
 #endif
+
+    // =============================================================================
+    // C Includes
+    // =============================================================================
     #include "FreeRTOS_wrapper.h"
+    // =============================================================================
+    // Defines
+    // =============================================================================
+
+    #define ms_to_us(delay) delay*1000
+    // =============================================================================
+    // Type definitions
+    // =============================================================================
     typedef enum
     {
         ENABLE_SOUND,
@@ -20,6 +32,10 @@ extern "C"
         LOAD_EFFECTS,
     }Light_MessageID;
 
+    // =============================================================================
+    // C Visible Function prototypes
+    // =============================================================================
+
     void Light_task(void *arg);
     void Ligth_init(void);
     void Pixel_rainbow(void);
@@ -30,36 +46,69 @@ extern "C"
     void Pixels_OFF();
     EventBits_t IDLE_light();
     void Set_Frames_buffer(uint8_t frames);
+
     #ifdef __cplusplus
+        // =============================================================================
+        // C++ Includes
+        // =============================================================================
         #include "neopixel.h"
         #include "IO_driver.h"
         #include "structs.h"
         #include "Menu.h"
         #include <vector>
         #include <list>
+        // =============================================================================
+        // Type definitions
+        // =============================================================================
         typedef std::list<RGB>* list_ptr;
+
+        /*
+        Reads from flash , and write data into a linked list.
+        +-----+-------+------+
+        | Red | Green | Blue | --> RGB
+        +-----+-------+------+
+
+        +--------+------+
+        | Pixels | RGB  | --> BLOCK
+        +--------+------+
+
+        +-------+-------+----+-------------+
+        | time  | group | .. | list<Block> | --> Frame
+        +-------+-------+----+-------------+
+
+        +--------+---------+-----+--------------+
+        | Frame1 | Frame2  | ... | list<Frames> | --> Sequence
+        +--------+---------+-----+--------------+
+
+        */
+
+       /* =============================================================================
+             ██████╗██╗      █████╗ ███████╗███████╗███████╗███████╗
+            ██╔════╝██║     ██╔══██╗██╔════╝██╔════╝██╔════╝██╔════╝
+            ██║     ██║     ███████║███████╗███████╗█████╗  ███████╗
+            ██║     ██║     ██╔══██║╚════██║╚════██║██╔══╝  ╚════██║
+            ╚██████╗███████╗██║  ██║███████║███████║███████╗███████║
+            ╚═════╝╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝╚══════╝
+        =============================================================================*/
+
         class Light
         {
             
             public:
             // a list of frames is a sequence
-            std::list<Frame> sequence;
-            std::list<Frame>::iterator seq_it;
-            uint8_t pixels        ;
-            uint8_t max_frames    ;
-            uint8_t rainbow_delay ;
-            int flash_times       ;
-            int fade_cycles       ;
+            std::list<Frame> sequence; // Light sequence list buffer
+            std::list<Frame>::iterator seq_it;// Helper iterator to pass over the list
+
+            uint8_t pixels        ; // modular pixes in neopixel
+            uint8_t max_frames    ; // max buffer size
+            uint8_t rainbow_delay ; // test rainbow
             
 
-            
             Light(uint8_t numer_of_pixels)
             {
                 this->pixels = numer_of_pixels;
                 this->max_frames = 10; // max frames in RAM
                 this->rainbow_delay = 10;
-                this->flash_times = 1000;
-                this->fade_cycles = 1000;
             }
             
 

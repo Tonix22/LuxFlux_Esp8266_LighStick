@@ -1,3 +1,7 @@
+// =============================================================================
+// Includes
+// =============================================================================
+
 #include <stdio.h>
 #include <vector>
 #include <list>
@@ -6,14 +10,15 @@
 #include "Light_effects.h"
 #include "structs.h"
 
-
-/*Defines*/
-
-
-/*Function prototypes*/
+// =============================================================================
+// Function prototypes
+// =============================================================================
 inline void rd_flash_wr_class(feature_t feature);
 
-/*Variables*/
+
+// =============================================================================
+// Variables
+// =============================================================================
 extern Light* LedStick;
 EventGroupHandle_t Flash_status;
 
@@ -22,10 +27,25 @@ char File_names[MAX_features][MAX_NAME_SIZE] = {{IDLE_FILE},
                                                 {CIRC_FILE},
                                                 {LINE_FILE}};
 
+// =============================================================================
+// Functions
+// =============================================================================
+
+/** 
+ * @brief
+ * Allocate Flash Flag status
+*/
+
 void init_flash_status_group(void)
 {
     Flash_status = xEventGroupCreate();
 }
+
+/** 
+ * @brief
+ * Check if file exist and 
+ * update event Group Flash status.
+*/
 
 EventBits_t file_exist(feature_t feature)
 {
@@ -36,6 +56,12 @@ EventBits_t file_exist(feature_t feature)
     return xEventGroupGetBits(Flash_status);
 }
 
+/** 
+ * @brief
+ * Read secuencue and update data
+ * 
+*/
+
 void file_read(feature_t feature)
 {
     file_open(READ, File_names[feature]);
@@ -45,6 +71,21 @@ void file_read(feature_t feature)
 
 /*
 Reads from flash , and write data into a linked list.
++-----+-------+------+
+| Red | Green | Blue | --> RGB
++-----+-------+------+
+
++--------+------+
+| Pixels | RGB  | --> BLOCK
++--------+------+
+
++-------+-------+----+-------------+
+| time  | group | .. | list<Block> | --> Frame
++-------+-------+----+-------------+
+
++--------+---------+-----+--------------+
+| Frame1 | Frame2  | ... | list<Frames> | --> Sequence
++--------+---------+-----+--------------+
 
 */
 inline void rd_flash_wr_class(feature_t feature)
@@ -52,27 +93,27 @@ inline void rd_flash_wr_class(feature_t feature)
     bool valid      = true;
     int  frames_cnt = 0;
     char pixels_cnt = 0;
-    Block* chunk    = new(Block);
+    Block* chunk    = new(Block); 
     Frame* frame    = new(Frame);
 
-    while(valid && frames_cnt < LedStick->max_frames)
+    while(valid && frames_cnt < LedStick->max_frames) // Read until buffer is full
     {
-        while(pixels_cnt < LedStick->pixels)
+        while(pixels_cnt < LedStick->pixels) // Read untill all pixels in frame are ready
         {
             valid = read_chunk(chunk, sizeof(Block),1);
             if(valid)
             {
                 pixels_cnt+=chunk->pixels;
-                frame->group.push_back(*chunk);
+                frame->group.push_back(*chunk); // push pixels in a group until fill ledstick
             }
-            else {goto Terminate;}
+            else {goto Terminate;} // frame is invalid or file is and its end
         }
         if(pixels_cnt == LedStick->pixels)//apend time of block
         {
             pixels_cnt = 0;
-            valid = read_chunk(&(frame->time), sizeof(uint32_t),1);
+            valid = read_chunk(&(frame->time), sizeof(uint32_t),1); // get Frame time
         }
-        else
+        else // invalid Time format, last data is ever time
         {
             xEventGroupSetBits(Flash_status, BAD_FORMAT);
             goto Terminate;
@@ -80,12 +121,12 @@ inline void rd_flash_wr_class(feature_t feature)
         //Frame is Done now push it to sequence
         if(valid)
         {
-            LedStick->sequence.push_back(*frame);
-            frame->group.clear();
-            frames_cnt++;
+            LedStick->sequence.push_back(*frame); // push frame to light sequence
+            frame->group.clear(); // Free memory of group allocated
+            frames_cnt++; // incremente frames count
         }
     }
-    Terminate:
+    Terminate: // goto Label here goes when something fail or when reading is finished
     frame->group.clear();
     delete(chunk);
     delete(frame);

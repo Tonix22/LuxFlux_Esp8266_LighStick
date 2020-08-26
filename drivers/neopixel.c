@@ -1,15 +1,24 @@
+// =============================================================================
+// includes
+// =============================================================================
 #include <stdio.h>
 #include "IO_driver.h"
 #include "FreeRTOS_wrapper.h"
+#include "neopixel.h"
 
+// =============================================================================
+// Local variables
+// =============================================================================
 
-#define T0L_TIME 1
-#define T1H_TIME 1
 uint8_t H_counter = 0;
 uint8_t L_counter = 0;
-int delay = 10;
+int delay = NEO_DELAY;
 
-
+/**
+ * @brief LOGICAL 0 driver to neopixel
+ * NOP are used because 
+ * HW timer peripheral cant reach Neopixel time requirments
+ */
 void Logical_0 (void)
 {
     gpio_set_level(GPIO_SDD3, 1);
@@ -42,6 +51,11 @@ void Logical_0 (void)
     __asm("NOP");
     __asm("NOP");
 }
+/**
+ * @brief LOGICAL 1 driver to neopixel
+ * NOP are used because 
+ * HW timer peripheral cant reach Neopixel time requirments
+ */
 void Logical_1 (void)
 {
     gpio_set_level(GPIO_SDD3, 1);
@@ -80,7 +94,11 @@ void Logical_1 (void)
     __asm("NOP");
     __asm("NOP");
 }
-//50us delay
+/**
+ * @brief Ther is a must a 
+ * 50us delay
+ * between each data frame
+ */
 void interpacket_reset(void)
 {
     gpio_set_level(GPIO_SDD3, 0);
@@ -89,16 +107,22 @@ void interpacket_reset(void)
         __asm("NOP");
     }
 }
-/*internally the led strip uses GREEN, RED, BLUE*/
+
+/**
+ * @brief 
+ * internally the led strip uses GREEN, RED, BLUE
+ * char* is used to pass data as reference and do frames faster
+ * @param R -> red 
+ * @param G -> green
+ * @param B -> blue
+ */
 void Color_Frame(uint8_t* R,uint8_t* G, uint8_t* B)
 {
-    uint32_t cluster = (*G << 16) | ( *R << 8) | *B;  
+    uint32_t cluster = (*G << 16) | ( *R << 8) | *B; // set up mask
     uint32_t bit_value = 0;
 
-    //printf("color frame: %06X\r\n",cluster);
-
     interpacket_reset();
-    for(uint8_t i = 23; i != 255; i--)
+    for(uint8_t i = 23; i != 255; i--)//pass 24 bits (8 bits per color)
     {
        bit_value =  cluster & (1<<i);
        if(bit_value == 0)
@@ -109,7 +133,5 @@ void Color_Frame(uint8_t* R,uint8_t* G, uint8_t* B)
        {
            Logical_1();
        }
-    }
-     //printf("color mask: %06X\r\n",bit_value);
-   
+    }   
 }

@@ -8,11 +8,16 @@
 extern "C" {
 
 #endif
-
+// =============================================================================
+// C Visible Function prototypes
+// =============================================================================
 void Menu_func();
 void sync_action(TimerHandle_t xTimer );
 
 #ifdef __cplusplus
+// =============================================================================
+// C++ Includes
+// =============================================================================
 #include "IO_driver.h"
 #include "imu6050.h"
 #include "FreeRTOS_wrapper.h"
@@ -24,6 +29,9 @@ void sync_action(TimerHandle_t xTimer );
 #include "tcp_server.h"
 #include "tcp_client.h"
 
+// =============================================================================
+// Defines
+// =============================================================================
 #define ABORT BIT0
 #define TASKDEATH BIT1
 #define IDLE_BUFFER_END BIT2
@@ -40,10 +48,15 @@ void sync_action(TimerHandle_t xTimer );
 #define DEBUG_EMPTY_FILE()
 #endif
 
+// =============================================================================
+// Extern
+// =============================================================================
 
 extern EventGroupHandle_t Flash_status;
 
-
+// =============================================================================
+// Type definitions
+// =============================================================================
 
 typedef void (*foo_ptr)(void *);
 struct Node
@@ -63,11 +76,18 @@ typedef enum{
     ARRAYSIZE,
 }Screen_t;
 
-//Prototypes
+typedef enum
+{
+    STOP,
+    RUN,
+}Service_steps;
+
+// =============================================================================
+// C++ Function prototypes
+// =============================================================================
 
 void abort_calib();
 void abort_last_menu();
-
 void idle_subtask(void *arg);
 void rith_subtask(void *arg);
 void circular_subtask(void *arg);
@@ -75,6 +95,20 @@ void level_subtask(void *arg);
 void wifi_subtask(void *arg);
 void sync_subtask(void *arg);
 
+/* =============================================================================
+             ██████╗██╗      █████╗ ███████╗███████╗███████╗███████╗
+            ██╔════╝██║     ██╔══██╗██╔════╝██╔════╝██╔════╝██╔════╝
+            ██║     ██║     ███████║███████╗███████╗█████╗  ███████╗
+            ██║     ██║     ██╔══██║╚════██║╚════██║██╔══╝  ╚════██║
+            ╚██████╗███████╗██║  ██║███████║███████║███████╗███████║
+            ╚═════╝╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝╚══════╝
+  =============================================================================*/
+/**
+ * @brief 
+ * Abstract and parent Class. It will be used by features that
+ * need reding data from flash and take actions with
+ * colors data
+ */
 class FeatureBehaviour 
 { 
     public:
@@ -83,9 +117,14 @@ class FeatureBehaviour
     bool file_found;
     bool load_status;
     bool cyclic;
-
+    /**
+     * @brief Each children class will specify this method
+     */
     virtual void run_feature_read()   = 0;
-
+    /**
+     * @brief Open file and check if exist
+     * @param effect Select File to open
+     */
     void check_file(feature_t& effect)
     {
         this->effect = effect;
@@ -94,13 +133,21 @@ class FeatureBehaviour
         clear_file_cursor();
 
     }
+    /**
+     * @brief Read data form Flash is file succeed
+     */
     void load_feature_file()
     {
         file_read(effect);
         file_mask   = xEventGroupGetBits(Flash_status);
         load_status = (file_mask & BAD_FORMAT);
     }
-
+    /**
+     * @brief Destroy the Feature Behaviour object
+     * File cursor is set at the begging
+     * light will be off
+     * clear event flag bits
+     */
     virtual ~FeatureBehaviour()
     {
         clear_file_cursor();
@@ -108,6 +155,9 @@ class FeatureBehaviour
         xEventGroupClearBits(Flash_status,BAD_FORMAT|EMPTYFILE);
     }
 };
+/**
+ * @brief IDLE light specialization
+ */
 class IDLE_Light : public FeatureBehaviour
 {   
     public:
@@ -117,28 +167,44 @@ class IDLE_Light : public FeatureBehaviour
         printf("IDLE\r\n");
         check_file(mode);
     }
+    /**
+     * @brief IDLE Mask will abort only when
+     * menu_mask bit is in abort
+     */
     void run_feature_read()
     {
         menu_mask = IDLE_light();
         cyclic    = (menu_mask & ABORT);
     }
 };
+/**
+ * @brief Ritmic especialization
+ */
 class Riht_Light : public FeatureBehaviour
 {
     public: 
     Riht_Light(feature_t mode)
     {
+        //expands buffer because it only will pass to read once
         Set_Frames_buffer(20);
         check_file(mode);
     }
+    /**
+     * @brief Ritmic only pass once and enables ISR
+     * 
+     */
     void run_feature_read()
     {
         input_IO_enable_isr(GPIO_SDD2, GPIO_INTR_NEGEDGE);
         cyclic = SET_BIT;
     }
+    //set buffer to normal size
     ~Riht_Light(){Set_Frames_buffer(10);}
 };
-
+/**
+ * @brief IMU circular especialization
+ * 
+ */
 class Circular_Light: public FeatureBehaviour
 {
     public:
@@ -146,30 +212,33 @@ class Circular_Light: public FeatureBehaviour
     {
         check_file(mode);
     }
-    void run_feature_read()
+    void run_feature_read() //TODO
     {
 
     }
 };
-typedef enum
-{
-    STOP,
-    RUN,
-}Service_steps;
+
+/**
+ * @brief Abstract class for Wifi Routines
+ */
+
 class Channel
 {
     public:
     Service_steps state = RUN;
-    virtual void clear_last_menu()   = 0;
-    virtual void init_wifi_service() = 0;
-    virtual void init_comm_service() = 0;
-    virtual void set_state()         = 0;
+    virtual void clear_last_menu()   = 0; // clear last task
+    virtual void init_wifi_service() = 0; // AP or Statiton
+    virtual void init_comm_service() = 0; // client or server
+    virtual void set_state()         = 0; // END loop condition
     virtual ~Channel(){}
 };
+/**
+ * @brief Class as AP and server 
+ */
 class Reciever: public Channel
 {
     public:
-    Reciever()
+    Reciever() // TODO
     {
 
     }
@@ -192,9 +261,12 @@ class Reciever: public Channel
     }
     ~Reciever()
     {
-        wifi_deint();
+        wifi_deint_ap();
     }
 };
+/**
+ * @brief Class as station and client 
+ */
 class Transmiter: public  Channel
 {
     public:
@@ -205,6 +277,7 @@ class Transmiter: public  Channel
     void clear_last_menu()
     {
         input_IO_disable_isr(GPIO_SDD2);
+        abort_last_menu();
         abort_calib();
     }
     void init_wifi_service()
@@ -225,20 +298,32 @@ class Transmiter: public  Channel
     }
 
 };
-
+/**
+ * @brief 
+ * This class takes the Menu state behaviouir
+ * works as static list which contains a task routin, 
+ * and ENUM as index of the corresponding task
+ * 
+ * Also has a next pointer which means which will be the next menu
+ */
 
 class DispMenu
 {
     public:
     Node screens[ARRAYSIZE] = 
                         { 
+                            //Task routine    //Next Menu       //Enum
                             {idle_subtask,    &(screens[RITH] ), IDLE },
                             {rith_subtask,    &(screens[CIRC] ), RITH },
                             {circular_subtask,&(screens[LEVEL]), CIRC },
                             {level_subtask,   &(screens[WIFI] ), LEVEL}, 
                             {wifi_subtask,    &(screens[IDLE] ), WIFI },
                             {sync_subtask,    &(screens[IDLE] ), SYNC },
-                        };             
+                        };
+    /**
+     * @brief 
+     * Task Menu names table
+     */
     const char names[ARRAYSIZE][15] = 
     {
         "idle_subtask",
@@ -249,23 +334,22 @@ class DispMenu
         "sync_subtask",
     };
     
-    Node* screen = &(screens[IDLE]);
+    Node* screen = &(screens[IDLE]); // pointer tu current menu state
 
-    DispMenu& operator++(int)
+    DispMenu& operator++(int) // overload ++ to fetch next menu routine
     {
-        screen = screen->next;
+        screen = screen->next;//go to next screen
         return *this;
     }
     //a way to acces to a function by index
-    void operator[](std::size_t idx)
+    void operator[](std::size_t idx) // Take Menu enumeration as direct index of the screen array
     {
-        this->screen = &(screens[idx]);
+        this->screen = &(screens[idx]); // set up by index
         xTaskCreate(this->screen->val, names[idx], 2048, NULL, 5, NULL);
-        //screens[idx].val(); //go to screen
     }
-    void operator ( ) () // Menu()
+    void operator ( ) () // Create task as a parallel excution, 
+                         //routine is based on the screen pointer
     {
-        //this->screen->val();
         xTaskCreate(this->screen->val, names[this->screen->id], 2048, NULL, 5, NULL);
     }
     void first_time();

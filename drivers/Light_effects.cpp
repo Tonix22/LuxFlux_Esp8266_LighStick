@@ -1,3 +1,6 @@
+// =============================================================================
+// C++ Includes
+// =============================================================================
 #include <stdio.h>
 #include <vector>
 #include <list>
@@ -7,37 +10,77 @@
 #include "memory_admin.h"
 #include "driver/hw_timer.h"
 
+
+// =============================================================================
+// Class
+// =============================================================================
+
 Light* LedStick;
+
+// =============================================================================
+// EventGroup
+// =============================================================================
+
 extern EventGroupHandle_t Menu_status;
 
+// =============================================================================
+// Queues
+// =============================================================================
 
-xQueueHandle Light_event = NULL;
 extern xQueueHandle imu_light_queue;
+xQueueHandle Light_event = NULL;
+
+// =============================================================================
+// Local Variables
+// =============================================================================
 
 static bool sound_released = true;
-static bool first_beat = true;
+static bool first_beat     = true;
+static uint32_t beat_time  = 40000;
 
+// =============================================================================
+// Function prototypes
+// =============================================================================
 void sound_action (void* arg );
+void Light_task   (void* arg );
 
-static uint32_t beat_time = 40000;
-
-void Light_task(void *arg)
+// =============================================================================
+// Class seters and getters
+// =============================================================================
+void Set_Frames_buffer(uint8_t frames)
 {
+    LedStick->max_frames = frames;
+}
 
-    Light_MessageID msg;
-    IMU_msgID imu_msg;
+// =============================================================================
+// Task
+// =============================================================================
 
-    LedStick         = new Light(8);
+void Ligth_init(void)
+{
+    xTaskCreate(Light_task, "Light_task", 4096, NULL, 10, NULL);
+    init_flash_status_group(); // Flash status flags allocate // TODO move to flash section
+}
+
+void Light_task(void* arg )
+{
+    /* Task comunication tools*/
+    Light_MessageID light_queue;
+    IMU_msgID imu_comm;
+
+    // Locate resources
+    LedStick         = new Light(8); ///8 pixels
     Light_event      = xQueueCreate(10, sizeof(uint32_t));
-    bool Calibrating = false;
+
+    bool load_calib_colors = false;
 
     for(;;)
     {
-        if (xQueueReceive(Light_event, &msg, portMAX_DELAY))
+        if (xQueueReceive(Light_event, &light_queue, portMAX_DELAY))
         {
-            switch (msg)
+            switch (light_queue)
             {   
-            case SOUND:
+            case SOUND://This message is send from SOUND ISR
                 if(sound_released == true)
                 {
                     sound_released = false;
@@ -45,38 +88,38 @@ void Light_task(void *arg)
                     hw_timer_alarm_us(beat_time, false);
                 }
                 break;
-            case ABORT_CALIBRATION:
+            case ABORT_CALIBRATION: // Abort calibration Manualy
                 for(uint8_t blink=0; blink < 10; blink++)
                 {
                     Flash_color(255,0,0,30);
                 }
                 break;
 
-            case CALIBRATION:
-                if(Calibrating == false)
+            case CALIBRATION:  // report Calibrating status
+                if(load_calib_colors == false)
                 {   
-                    Calibrating = true;
+                    load_calib_colors = true;
                     LedStick->Fade_colors[0] = {255, 0  , 0};
                     LedStick->Fade_colors[1] = {255, 128, 0};
                 }
                 Fade_color();
-                imu_msg = IMU_ACK;
+                imu_comm = IMU_ACK;
                 //printf("Fade\r\n");
-                xQueueSend(imu_light_queue, &imu_msg, 100);
+                xQueueSend(imu_light_queue, &imu_comm, 100);
                 break;
 
-            case END_CALIBRATION:
-                if(Calibrating == true)
+            case END_CALIBRATION: // show end calibration sequence
+                if(load_calib_colors == true)
                 {
-                    Calibrating = false;
+                    load_calib_colors = false;
                     LedStick->Fade_colors[0] = {0, 0  , 0};
                     LedStick->Fade_colors[1] = {0, 255, 0};
                 }
                 Fade_color();
-                imu_msg = IMU_ACK;
-                xQueueSend(imu_light_queue, &imu_msg, 100);
+                imu_comm = IMU_ACK;
+                xQueueSend(imu_light_queue, &imu_comm, 100);
                 break;
-            case OFF:
+            case OFF: // turn off ledstick
                 LedStick->Led_stick_off();
                 vTaskDelay(10/ portTICK_RATE_MS);
                 LedStick->Led_stick_off();
@@ -86,16 +129,19 @@ void Light_task(void *arg)
         }
     }
 }
-void Ligth_init(void)
-{
-    xTaskCreate(Light_task, "Light_task", 4096, NULL, 10, NULL);
-    init_flash_status_group();
-}
 
+// =============================================================================
+// IDLE light sequence
+// =============================================================================
+/**
+ * @brief
+ * Hardware timer is used to give specific time perfomance between each frame.
+ * RTOS task delay could provide lagg or not precise results
+ * */
 void IDLE_HW_TIMER(void *arg)
 {
     static int i = 0;
-    taskDISABLE_INTERRUPTS();
+    taskDISABLE_INTERRUPTS(); // STOP RTOS systic ISR
     for(auto& group: LedStick->seq_it->group)
     {
         for(i = 0; i < group.pixels; i++)
@@ -103,59 +149,91 @@ void IDLE_HW_TIMER(void *arg)
             LedStick->Paint_LED(group.color);
         }
     }
-    LedStick->seq_it++;
-    if(LedStick->seq_it != LedStick->sequence.end())
-    {
-        hw_timer_alarm_us(LedStick->seq_it->time*1000, true);
-    }
-    else
-    {
-        xEventGroupSetBits(Menu_status,IDLE_BUFFER_END);
-    }
-    taskENABLE_INTERRUPTS();
-}
 
+    LedStick->seq_it++; // move to next Frame
+
+    if(LedStick->seq_it != LedStick->sequence.end())//pending frames
+    {
+        hw_timer_alarm_us(ms_to_us(LedStick->seq_it->time), true);//Load next timer
+    }
+    else // buffer is over,go to load more frames
+    {
+        xEventGroupSetBits(Menu_status,IDLE_BUFFER_END); 
+    }
+    taskENABLE_INTERRUPTS(); // enable RTOS systic ISR
+}
+/**
+ * @brief 
+ * IDLE light secuence, load a personalized sequecence previously stored
+ */
 EventBits_t IDLE_light()
 {
-    LedStick->seq_it = LedStick->sequence.begin();
+    LedStick->seq_it = LedStick->sequence.begin(); // point to frames beginig
+    /*init hw timer*/
     hw_timer_init(IDLE_HW_TIMER, NULL);
-    hw_timer_alarm_us(LedStick->seq_it->time*1000, true);
+    hw_timer_alarm_us(ms_to_us(LedStick->seq_it->time), true);
 
+    /*Wait buffer is empty or abort signal request*/
     EventBits_t wait_buffer = xEventGroupWaitBits(Menu_status,
             ABORT|IDLE_BUFFER_END,
             pdFALSE,
             pdFALSE,
             portMAX_DELAY); // wait until seq is finished
-    /*Terminate frames*/
-    hw_timer_deinit();
-    LedStick->sequence.clear();
-    xEventGroupClearBits(Menu_status,IDLE_BUFFER_END);
-    return wait_buffer;
-}
 
+    /*Deallocate timer info*/
+    hw_timer_deinit();
+    /*Deallocate frames*/
+    LedStick->sequence.clear();
+    /*Clear buffer status*/
+    xEventGroupClearBits(Menu_status,IDLE_BUFFER_END);
+
+    return wait_buffer; // this flag to check if abort was called
+}
+// =============================================================================
+// SOUND light sequence
+// =============================================================================
+
+/**
+ * @brief
+ * This handler is called by a hardware timer
+ * 1. Check if first frame is loaded
+ * 2. Beat time, is the sound beat ISR between each color
+ * 3. Fill Ledstick with color
+ * 4. If sequence ends, point back to beginig
+ * 5. Enable ISR, to wait to next sound beat
+ */
 void sound_action (void* arg )
 {
     
-    if(first_beat)
+    if(first_beat) // 1
     {
         first_beat = false;
         LedStick->seq_it = LedStick->sequence.begin();
     }
-    beat_time = (LedStick->seq_it->time)*1000;
+    beat_time = ms_to_us(LedStick->seq_it->time); //2
     
-    LedStick->Fill_Led_stick(LedStick->seq_it->group.back().color);
-    LedStick->seq_it++;
+    LedStick->Fill_Led_stick(LedStick->seq_it->group.back().color); //3
+    LedStick->seq_it++; // move to next frame
 
-    if(LedStick->seq_it == LedStick->sequence.end())
+    if(LedStick->seq_it == LedStick->sequence.end()) //4
     {
         first_beat = true;
     }
     sound_released = true;
-    input_IO_enable_isr(GPIO_SDD2, GPIO_INTR_NEGEDGE);
+    input_IO_enable_isr(GPIO_SDD2, GPIO_INTR_NEGEDGE);//5
     hw_timer_deinit();
 }
+// =============================================================================
+// HARDCODED EFFECTS
+// =============================================================================
 
-
+/**
+ * @brief
+ * This effects show transition between two colors
+ * 1. Used to show when IMU is calibrating orange/red
+ * 2. IMU succes Green/black
+ * 3. Sync in process 
+ */
 void Fade_color(void)
 {
     static uint8_t leds_num = 0;
@@ -176,7 +254,12 @@ void Fade_color(void)
         }
     }
 }
-
+/**
+ * @brief
+ * Alert from some event
+ * 1. Calibration abort or error --> FLASH RED
+ * 2. System is on AP mode --> FLASH BLUE
+ */
 void Flash_color(uint8_t R, uint8_t G, uint8_t B, int ms_rate)
 { 
     LedStick->Fill_Led_stick(R,G,B);
@@ -186,10 +269,6 @@ void Flash_color(uint8_t R, uint8_t G, uint8_t B, int ms_rate)
     LedStick->Led_stick_off();
 
     vTaskDelay(ms_rate/ portTICK_RATE_MS); 
-}
-void Set_Frames_buffer(uint8_t frames)
-{
-    LedStick->max_frames = frames;
 }
 void Pixels_OFF()
 {

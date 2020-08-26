@@ -1,39 +1,61 @@
-/* WiFi station Example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
+/* 
+   This code is in the Public Domain (or CC0 licensed, at your option.
    Unless required by applicable law or agreed to in writing, this
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
+
+// =============================================================================
+// includes
+// =============================================================================
 #include <string.h>
 #include "config.h"
 #include "wifi.h"
 #include "FreeRTOS_wrapper.h"
 
-
-
+// =============================================================================
+// Local variables
+// =============================================================================
 
 static const char *TAG = "wifi Driver";
-
-//ACESS POINT
 
 /* The event group allows multiple bits for each event, but we only care about two events:
  * - we are connected to the AP with an IP
  * - we failed to connect after the maximum amount of retries */
-
-#define WIFI_CONNECTED_BIT BIT0
-#define WIFI_FAIL_BIT      BIT1
-
-
-/* FreeRTOS event group to signal when we are connected*/
 static EventGroupHandle_t s_wifi_event_group;
 
-static int s_retry_num = 0;
+static int s_retry_num = 0; // Max retryes number counter
 
-static void event_handler(void* arg, esp_event_base_t event_base,
-                          int32_t event_id, void* event_data)
-{
+// =============================================================================
+// Functions Prototypes
+// =============================================================================
+void DHCP_setup(void);
+
+// =============================================================================
+// 
+// ██╗███████╗██████╗     ██╗  ██╗ █████╗ ███╗   ██╗██████╗ ██╗     ███████╗██████╗ ███████╗
+// ██║██╔════╝██╔══██╗    ██║  ██║██╔══██╗████╗  ██║██╔══██╗██║     ██╔════╝██╔══██╗██╔════╝
+// ██║███████╗██████╔╝    ███████║███████║██╔██╗ ██║██║  ██║██║     █████╗  ██████╔╝███████╗
+// ██║╚════██║██╔══██╗    ██╔══██║██╔══██║██║╚██╗██║██║  ██║██║     ██╔══╝  ██╔══██╗╚════██║
+// ██║███████║██║  ██║    ██║  ██║██║  ██║██║ ╚████║██████╔╝███████╗███████╗██║  ██║███████║
+// ╚═╝╚══════╝╚═╝  ╚═╝    ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝╚══════╝
+// =============================================================================
+
+/**
+ * @brief 
+ * Says when ESP8266 is connected to an AP
+ * @param arg 
+ * @param event_base WIFI_EVENT or IP_EVENT
+ * @param event_id WIFI_EVENT_STA_START, WIFI_EVENT_STA_DISCONNECTED, IP_EVENT_STA_GOT_IP
+ * @param event_data provides info of ip
+ */
+
+static void station_event_handler(void* arg, esp_event_base_t event_base,
+                                  int32_t event_id, void* event_data){
+
+    // =============================================================================
+    // WIFI_EVENT
+    // =============================================================================
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) 
     { 
         esp_wifi_connect();
@@ -51,7 +73,10 @@ static void event_handler(void* arg, esp_event_base_t event_base,
             xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
         }
         ESP_LOGI(TAG,"connect to the AP fail");
-    } 
+    }
+    // =============================================================================
+    // IP_EVENT
+    // =============================================================================
     else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) 
     {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
@@ -62,7 +87,15 @@ static void event_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
-static void wifi_event_handler(void* arg, esp_event_base_t event_base,
+/**
+ * @brief Handler when ESP is an AP
+ * 
+ * @param arg 
+ * @param event_base 
+ * @param event_id WIFI_EVENT_AP_STACONNECTED, WIFI_EVENT_AP_STADISCONNECTED
+ * @param event_data provide mac address of connected device
+ */
+static void ap_event_handler(void* arg, esp_event_base_t event_base,
                                     int32_t event_id, void* event_data)
 {
     if (event_id == WIFI_EVENT_AP_STACONNECTED) {
@@ -76,6 +109,20 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
+// =============================================================================
+// 
+// ██╗    ██╗██╗███████╗██╗    ███████╗███████╗████████╗██╗   ██╗██████╗
+// ██║    ██║██║██╔════╝██║    ██╔════╝██╔════╝╚══██╔══╝██║   ██║██╔══██╗
+// ██║ █╗ ██║██║█████╗  ██║    ███████╗█████╗     ██║   ██║   ██║██████╔╝
+// ██║███╗██║██║██╔══╝  ██║    ╚════██║██╔══╝     ██║   ██║   ██║██╔═══╝
+// ╚███╔███╔╝██║██║     ██║    ███████║███████╗   ██║   ╚██████╔╝██║
+//  ╚══╝╚══╝ ╚═╝╚═╝     ╚═╝    ╚══════╝╚══════╝   ╚═╝    ╚═════╝ ╚═╝
+// =============================================================================
+
+/**
+ * @brief Generic TCP adapter init
+ * this step is indepent of STA or AP
+ */
 void wifi_set(void)
 {
     tcpip_adapter_init();
@@ -84,14 +131,18 @@ void wifi_set(void)
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 }
 
+/**
+ * @brief Init station driver
+ * 
+ */
 void wifi_init_sta(void)
 {
     s_wifi_event_group = xEventGroupCreate();
 
     wifi_set();
 
-    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
-    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &station_event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &station_event_handler, NULL));
 
     wifi_config_t wifi_config = {
         .sta = {
@@ -115,7 +166,7 @@ void wifi_init_sta(void)
     ESP_LOGI(TAG, "wifi_init_sta finished.");
     //#if AUTOCONNECT
     /* Waiting until either the connection is established (WIFI_CONNECTED_BIT) or connection failed for the maximum
-     * number of re-tries (WIFI_FAIL_BIT). The bits are set by event_handler() (see above) */
+     * number of re-tries (WIFI_FAIL_BIT). The bits are set by station_event_handler() (see above) */
     EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
             WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
             pdFALSE,
@@ -137,12 +188,15 @@ void wifi_init_sta(void)
     vEventGroupDelete(s_wifi_event_group);
 }
 
+/**
+ * @brief Init soft AP
+ */
 
 void wifi_init_softap(void)
 {
     wifi_set();
 
-    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &ap_event_handler, NULL));
     
     wifi_config_t wifi_config = {
         .ap = {
@@ -163,45 +217,40 @@ void wifi_init_softap(void)
     ESP_LOGI(TAG, "wifi_init_softap finished. SSID:%s password:%s",
              AP_SSID, AP_PASS);
 
-    #ifdef CHANGE_DCHP // change in production
-        tcpip_adapter_ip_info_t val;
-        tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP,&val);
-        ESP_LOGI(TAG, "old dhcp:%s", ip4addr_ntoa(&val.ip));
-        IP4_ADDR(&val.ip,192, 168 , 5, 1);
-        IP4_ADDR(&val.gw,192, 168 , 5, 1);
-        tcpip_adapter_dhcps_stop(TCPIP_ADAPTER_IF_AP);
-
-        tcpip_adapter_set_ip_info(TCPIP_ADAPTER_IF_AP,&val);
-
-        tcpip_adapter_dhcps_start(TCPIP_ADAPTER_IF_AP);
-
-        tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP,&val);
-
-        ESP_LOGI(TAG, "new dhcp:%s", ip4addr_ntoa(&val.ip));
+    #ifdef CHANGE_DCHP // TODO change in production
+    DHCP_setup();
     #endif
 
-
 }
-
-void wifi_deint(void)
+/**
+ * @brief Clean all AP status, so AP is off 
+ */
+void wifi_deint_ap(void)
 {
     esp_wifi_stop();
     esp_event_loop_delete_default();
     esp_wifi_deinit();
-    esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler);    
+    esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &ap_event_handler);    
 }
+/**
+ * @brief Change DHCP IPS
+ */
+void DHCP_setup(void)
+{
+    
+    tcpip_adapter_ip_info_t val;
+    tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP,&val);
+    ESP_LOGI(TAG, "old dhcp:%s", ip4addr_ntoa(&val.ip));
+    IP4_ADDR(&val.ip,192, 168 , 5, 1);
+    IP4_ADDR(&val.gw,192, 168 , 5, 1);
+    tcpip_adapter_dhcps_stop(TCPIP_ADAPTER_IF_AP);
 
-void WIFI_ON(void)
-{
-    if(esp_wifi_start() == 0)
-    {
-        ESP_LOGI(TAG,"WIFI ON");
-    }
-}
-void WIFI_OFF(void)
-{
-    if(esp_wifi_stop() == 0)
-    {
-        ESP_LOGI(TAG,"WIFI OFF");
-    }
+    tcpip_adapter_set_ip_info(TCPIP_ADAPTER_IF_AP,&val);
+
+    tcpip_adapter_dhcps_start(TCPIP_ADAPTER_IF_AP);
+
+    tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP,&val);
+
+    ESP_LOGI(TAG, "new dhcp:%s", ip4addr_ntoa(&val.ip));
+   
 }
