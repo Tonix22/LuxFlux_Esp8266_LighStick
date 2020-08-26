@@ -3,6 +3,7 @@
 // =============================================================================
 
 #include <stdio.h>
+#include <string.h>
 #include "FreeRTOS_wrapper.h"
 #include "esp_system.h"
 #include "IO_driver.h"
@@ -10,6 +11,8 @@
 #include "imu6050.h"
 #include "file_system.h"
 #include "config.h"
+#include "lwip/init.h"
+
 
 // =============================================================================
 //  VERSION INFO !!!IMPORTANT!!
@@ -22,8 +25,20 @@ This repo works correctly with the following conditions
 + LWIP ffd1059
 + mbedtls 9ef92c55
 + cJSON v1.7.12
+to fix the problem type in your terminal -> git checkout <commit_id>
 **/
-
+void check_version()
+{
+    if(strcmp(esp_get_idf_version(),VALID_SYSTEM_VERSION) != 0)
+    {
+        printf("\x1B[0;33mW !!!WARNING!!! RTOS VERSION IS NOT g9f37d690\r\n");
+        printf("\x1B[0;33mW !!!WARNING!!! UNEXPECTED BEHAVIOR\r\n");
+    }
+    if(strcmp(LWIP_VERSION_STRING,LWIP_VALID_VERSION)!=0)
+    {   
+        printf("\x1B[0;31mE WIFI MAY FAIL LWIP VERSION INCORRECT\r\n");
+    }
+}
 
 // =============================================================================
 // external testing variables
@@ -45,6 +60,8 @@ extern xQueueHandle imu_cntrl_queue;
 
 void app_main(void)
 {
+    check_version();//VERSION INFO !!!IMPORTANT!!
+
     esp_set_cpu_freq(ESP_CPU_FREQ_160M); // 1
     // ================================
     // IO config

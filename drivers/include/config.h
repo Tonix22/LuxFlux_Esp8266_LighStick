@@ -1,6 +1,9 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#define VALID_SYSTEM_VERSION "v3.2-565-g9f37d690-dirty"
+#define LWIP_VALID_VERSION   "2.1.3d"
+
 #define DEBUG_MENU  (0)
 
 #define RIGHT_STICK (0)
