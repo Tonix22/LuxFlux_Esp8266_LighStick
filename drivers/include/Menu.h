@@ -30,12 +30,15 @@ void sync_action(TimerHandle_t xTimer );
 #include "tcp_client.h"
 
 // =============================================================================
-// Defines
+// EVENT GROUPS BITS DEFINES
 // =============================================================================
+
 #define ABORT BIT0
 #define TASKDEATH BIT1
 #define IDLE_BUFFER_END BIT2
-
+// =============================================================================
+// DEFINES
+// =============================================================================
 #define CLEAR_BIT 0
 #define SET_BIT 1
 

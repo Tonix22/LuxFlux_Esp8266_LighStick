@@ -6,6 +6,11 @@
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
+
+// =============================================================================
+// INCLUDES
+// =============================================================================
+
 #include <string.h>
 #include <sys/param.h>
 
@@ -15,7 +20,6 @@
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_event.h"
-//#include "protocol_examples_common.h"
 #include "nvs.h"
 #include "nvs_flash.h"
 
@@ -25,22 +29,43 @@
 #include <lwip/netdb.h>
 
 #include "config.h"
-
+// =============================================================================
+// DEFINES
+// =============================================================================
 #define SEND_NACK message_response(&sock,"NACK\n")
 #define SEND_ACK message_response(&sock,"ACK\n")
 
+static const char *TAG = "SERVER";
 
-bool message_response(int* sock, const char* msg);
+bool message_response(int* sock, const char* msg){
+    int err = send(*sock, msg, (strlen(msg)+1), 0);
+    if (err < 0) {
+        ESP_LOGE(TAG, "Error occured during sending: errno %d", errno);
+        return false;
+    }
+    return true;
+}
 
-static const char *TAG = "example";
+/**
+ * @brief 
+ * 1. Prepare socket
+ * 2. Socket Bind,listen and accept
+ * 3. Wait First Message
+ * 4. Send Response
+ * 5. Loop comunication
+ * @param pvParameters 
+ */
 
 static void tcp_server_task(void *pvParameters)
 {
+    // =============================================================================
+    // 1. Prepare socket
+    // =============================================================================
     char rx_buffer[128];
-    char addr_str[128];
-    int addr_family;
-    int ip_protocol;
-    bool first_msg=true;
+    char addr_str [128];
+    int  addr_family;
+    int  ip_protocol;
+    bool first_msg = true;
 
     while (1) {
 
@@ -60,6 +85,10 @@ static void tcp_server_task(void *pvParameters)
             break;
         }
         ESP_LOGI(TAG, "Socket created");
+
+        // =============================================================================
+        // 2. Socket Bind,listen and accept
+        // =============================================================================
 
         int err = bind(listen_sock, (struct sockaddr *)&destAddr, sizeof(destAddr));
         if (err != 0) {
@@ -87,6 +116,12 @@ static void tcp_server_task(void *pvParameters)
         ESP_LOGI(TAG, "Socket accepted");
 
         while (1) {
+
+            // =============================================================================
+            // 3. Wait First Message
+            // =============================================================================
+
+
             int len = recv(sock, rx_buffer, sizeof(rx_buffer) - 1, 0);
             // Error occured during receiving
             if (len < 0) {
@@ -102,8 +137,9 @@ static void tcp_server_task(void *pvParameters)
             else {
 
                 inet_ntoa_r(((struct sockaddr_in *)&sourceAddr)->sin_addr.s_addr, addr_str, sizeof(addr_str) - 1);
-
-
+                // =============================================================================
+                // 4. Send Response
+                // =============================================================================
                 //rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string
                 char* ptr = strchr(rx_buffer,'\n');
                 if(ptr !=NULL){
@@ -134,7 +170,6 @@ static void tcp_server_task(void *pvParameters)
                         break;
                     }
                 }
-                
             }
         }
 
@@ -149,27 +184,8 @@ static void tcp_server_task(void *pvParameters)
     vTaskDelete(NULL);
 }
 
-bool message_response(int* sock, const char* msg){
-    int err = send(*sock, msg, (strlen(msg)+1), 0);
-    if (err < 0) {
-        ESP_LOGE(TAG, "Error occured during sending: errno %d", errno);
-        return false;
-    }
-
-    return true;
-}
 
 void server_init()
 {
-    /*
-    ESP_ERROR_CHECK(nvs_flash_init());
-    ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
-
-    ESP_ERROR_CHECK(example_connect());
-    */
-
-    xTaskCreate(tcp_server_task, "tcp_server", 4096, NULL, 5, NULL);
-
-    
+    xTaskCreate(tcp_server_task, "tcp_server", 4096, NULL, 5, NULL);    
 }

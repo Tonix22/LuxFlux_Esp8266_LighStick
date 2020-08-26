@@ -6,6 +6,11 @@
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
+
+// =============================================================================
+// INCLUDES
+// =============================================================================
+
 #include <string.h>
 #include <sys/param.h>
 
@@ -15,7 +20,6 @@
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_event.h"
-//#include "protocol_examples_common.h"
 #include "nvs.h"
 #include "nvs_flash.h"
 
@@ -26,10 +30,15 @@
 
 #include "config.h"
 
+// =============================================================================
+// Local variables
+// =============================================================================
+
 
 static const char *TAG = "example";
 char *payload = "Message from ESP32 ";
 int sock;
+
 int send_msg(const char * msg){
     int err = send(sock, msg, strlen(msg), 0);
     if (err < 0) {
@@ -47,16 +56,28 @@ int recv_msg(char* msg, int lenght){
     return len;
 }
 
+/**
+ * @brief 
+ * 1. Prepare socket
+ * 2. Socket Connect
+ * 3. Send First Message
+ * 4. Wait Response
+ * 5. Request first chunk
+ * 6. Loop comunication
+ * 
+ * @param pvParameters 
+ */
 static void tcp_client_task(void *pvParameters)
 {
+    // =============================================================================
+    // 1. Prepare socket
+    // =============================================================================
     char rx_buffer[128];
     char addr_str[128];
     int addr_family;
     int ip_protocol;
 
     while (1) {
-
-
         struct sockaddr_in destAddr;
         destAddr.sin_addr.s_addr = inet_addr(HOST_IP_ADDR);
         destAddr.sin_family = AF_INET;
@@ -65,39 +86,52 @@ static void tcp_client_task(void *pvParameters)
         ip_protocol = IPPROTO_IP;
         inet_ntoa_r(destAddr.sin_addr, addr_str, sizeof(addr_str) - 1);
 
-
-         sock =  socket(addr_family, SOCK_STREAM, ip_protocol);
+        sock =  socket(addr_family, SOCK_STREAM, ip_protocol);
         if (sock < 0) {
             ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
             break;
         }
         ESP_LOGI(TAG, "Socket created");
 
+        // =============================================================================
+        // 2. Socket Connect
+        // =============================================================================
         int err = connect(sock, (struct sockaddr *)&destAddr, sizeof(destAddr));
         if (err != 0) {
             ESP_LOGE(TAG, "Socket unable to connect: errno %d", errno);
         }
         ESP_LOGI(TAG, "Successfully connected");
 
+        // =============================================================================
+        // 2. Socket Connect
+        // =============================================================================
         /************** SEND FIRST MESSAGE ******************/
         
         while(send_msg("SYNC\n")<0){
                 vTaskDelay(1000/ portTICK_RATE_MS);    
         }
-
-        /************** MESSAGE FROM SERVER ******************/
+        // =============================================================================
+        // 3. Send First Message
+        // =============================================================================
+        
+        // =============================================================================
+        // 4. Wait Response
+        // =============================================================================
         int len = recv_msg(rx_buffer,sizeof(rx_buffer));
         if (len > 0) {
             rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string
             ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
             ESP_LOGI(TAG, "%s", rx_buffer);
-                
+            // =============================================================================
+            // 5. Request first chunk
+            // =============================================================================
             if(strcmp (rx_buffer, "READY TO SYNC\n") == 0){
              send_msg("CHUNK :)\n");
             }
         }
-       
- 
+        // =============================================================================
+        // 6. Loop comunication
+        // =============================================================================
         while (1) {
           
             if (recv_msg(rx_buffer,sizeof(rx_buffer)) > 0) {
@@ -126,12 +160,5 @@ static void tcp_client_task(void *pvParameters)
 
 void client_init()
 {
-    /*
-    ESP_ERROR_CHECK(nvs_flash_init());
-    ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
-
-    ESP_ERROR_CHECK(example_connect());
-    */
     xTaskCreate(tcp_client_task, "tcp_client", 4096, NULL, 5, NULL);
 }

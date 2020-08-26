@@ -1,8 +1,8 @@
 #ifndef STRUCTS_H
 #define STRUCTS_H
-
-#define MAX_RGB 10
-
+// =============================================================================
+// TYPE DEFINITION
+// =============================================================================
 typedef enum
 {
     IDLE_feature,
@@ -11,6 +11,26 @@ typedef enum
     LINEAR_feature,
     MAX_features,
 }feature_t;
+
+    /*
+    Next structures explained
+    +-----+-------+------+
+    | Red | Green | Blue | --> RGB
+    +-----+-------+------+
+
+    +--------+------+
+    | Pixels | RGB  | --> BLOCK
+    +--------+------+
+
+    +-------+-------+----+-------------+
+    | time  | group | .. | list<Block> | --> Frame
+    +-------+-------+----+-------------+
+
+    +--------+---------+-----+--------------+
+    | Frame1 | Frame2  | ... | list<Frames> | --> Sequence
+    +--------+---------+-----+--------------+
+
+    */
 
 typedef struct 
 {

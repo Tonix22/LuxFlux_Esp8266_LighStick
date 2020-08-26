@@ -1,13 +1,15 @@
-/* I2C example
+/* I2C
 
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
+   This code is in the Public Domain (or CC0 licensed, at your option.)
 
    Unless required by applicable law or agreed to in writing, this
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
 
-
+// =============================================================================
+// INCLUDES
+// =============================================================================
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -23,41 +25,51 @@
 #include "Menu.h"
 #include "imu6050.h"
 
-
-//static const char *TAG = "main";
+// =============================================================================
+// QUEUES
+// =============================================================================
 extern xQueueHandle Light_event;
 xQueueHandle imu_light_queue = NULL;
 xQueueHandle imu_cntrl_queue = NULL;
 
-uint32_t P = 0;
-int i = 0;
-float TIEMPO = 0.04; //40 milisegundos VARIABLE DE PRUEBA
-
+/*lvaues for queues*/
 Light_MessageID imu_to_led_msg;
 IMU_msgID       imu_cntrl;
+
+// =============================================================================
+// EVENT GROUPS
+// =============================================================================
+EventGroupHandle_t calib_flags;
+EventBits_t calib_status;
+
+// =============================================================================
+// ECUATION RELATED
+// =============================================================================
+uint32_t Pos_vector = 0;
+int i = 0;
+float sampling_time = 0.04; //40 miliseconds
 float A = 0, V = 0, Vf = 0, S = 0, G = 0, theta = 0;
 
+
+// =============================================================================
+// STRUCTS AND POINTERS
+// =============================================================================
 MeasureBits RAW;
 MeasureBits Offset;
 MeasureAcel Vel;
 MeasureAcel Pos;
 float *Vo = &(Vel.Abx);
 float *So = &(Pos.Abx);
-
-char sensor_log[7][20] = {{"Acel x: "},{"Acel y: "},{"Acel z: "},{"TEMP: "},{"Gyro x: "},{"Gyro y: "},{"Gyro z: "}};
-int32_t aux;
-
 int32_t* RAWptr = &RAW.Abx;
 int32_t* Offsetptr = &Offset.Abx;
+// =============================================================================
+// DEBUG
+// =============================================================================
+char sensor_log[7][20] = {{"Acel x: "},{"Acel y: "},{"Acel z: "},{"TEMP: "},{"Gyro x: "},{"Gyro y: "},{"Gyro z: "}};
 
-EventGroupHandle_t calib_flags;
-EventBits_t calib_status;
 
 /**
- * TEST CODE BRIEF
- *
- * This example will show you how to use I2C module by running two tasks on i2c bus:
- *
+ *   CODE BRIEF
  * - read external i2c sensor, here we use a MPU6050 sensor for instance.
  * - Use one I2C port(master mode) to read or write the other I2C port(slave mode) on one ESP8266 chip.
  *
@@ -77,46 +89,6 @@ EventBits_t calib_status;
  * - read the sensor data, if connected.
  */
 
-#define I2C_EXAMPLE_MASTER_SCL_IO           2                /*!< gpio number for I2C master clock */
-#define I2C_EXAMPLE_MASTER_SDA_IO           14               /*!< gpio number for I2C master data  */
-#define I2C_EXAMPLE_MASTER_NUM              I2C_NUM_0        /*!< I2C port number for master dev */
-#define I2C_EXAMPLE_MASTER_TX_BUF_DISABLE   0                /*!< I2C master do not need buffer */
-#define I2C_EXAMPLE_MASTER_RX_BUF_DISABLE   0                /*!< I2C master do not need buffer */
-
-#define MPU6050_SENSOR_ADDR                 0x68             /*!< slave address for MPU6050 sensor */
-#define MPU6050_CMD_START                   0x41             /*!< Command to set measure mode */
-#define MPU6050_WHO_AM_I                    0x75             /*!< Command to read WHO_AM_I reg */
-#define WRITE_BIT                           I2C_MASTER_WRITE /*!< I2C master write */
-#define READ_BIT                            I2C_MASTER_READ  /*!< I2C master read */
-#define ACK_CHECK_EN                        0x1              /*!< I2C master will check ack from slave*/
-#define ACK_CHECK_DIS                       0x0              /*!< I2C master will not check ack from slave */
-#define ACK_VAL                             0x0              /*!< I2C ack value */
-#define NACK_VAL                            0x1              /*!< I2C nack value */
-#define LAST_NACK_VAL                       0x2              /*!< I2C last_nack value */
-
-/**
- * Define the mpu6050 register address:
- */
-#define SMPLRT_DIV      0x19
-#define CONFIG          0x1A
-#define GYRO_CONFIG     0x1B
-#define ACCEL_CONFIG    0x1C
-#define ACCEL_XOUT_H    0x3B
-#define ACCEL_XOUT_L    0x3C
-#define ACCEL_YOUT_H    0x3D
-#define ACCEL_YOUT_L    0x3E
-#define ACCEL_ZOUT_H    0x3F
-#define ACCEL_ZOUT_L    0x40
-#define TEMP_OUT_H      0x41
-#define TEMP_OUT_L      0x42
-#define GYRO_XOUT_H     0x43
-#define GYRO_XOUT_L     0x44
-#define GYRO_YOUT_H     0x45
-#define GYRO_YOUT_L     0x46
-#define GYRO_ZOUT_H     0x47
-#define GYRO_ZOUT_L     0x48
-#define PWR_MGMT_1      0x6B
-#define WHO_AM_I        0x75  /*!< Command to read WHO_AM_I reg */
 
 
 /**
@@ -453,24 +425,24 @@ int calibrate_sensor(int sensor_num)
 int32_t imu_avg(int32_t data)
 { 
     static int32_t i = 0;
-    static int32_t P = 0;
+    static int32_t Pos_vector = 0;
     if (i == 0)
     {
-        P = data; 
+        Pos_vector = data; 
     }
     else
     {
-        P = P*i;
-        P = P+data;
-        P = P/(i+1);
+        Pos_vector = Pos_vector*i;
+        Pos_vector = Pos_vector+data;
+        Pos_vector = Pos_vector/(i+1);
     }
     if(i == CALIB_MAX)
     {
         i = 0;
-        P = 0;
+        Pos_vector = 0;
     }
     i++;
-    return P;
+    return Pos_vector;
 }
 
 void Position(int32_t Ab)
@@ -481,10 +453,10 @@ void Position(int32_t Ab)
     printf("div: %f  \r\n", A);
     A *= -9.81; //Gravedad 
     printf("acel: %f en m/s^2 \r\n", A);
-    V = A*TIEMPO; //a(t) = (vf - vo)/t
+    V = A*sampling_time; //a(t) = (vf - vo)/t
     V = V + *Vo;
     printf("Vel: %f en m/s \r\n", V);
-    S = V*TIEMPO;  //v(t) = (sf- so)/t
+    S = V*sampling_time;  //v(t) = (sf- so)/t
     S = S + *So;
     printf("Pos: %f en m \r\n", S);
     *Vo = V;//
@@ -511,7 +483,7 @@ void Angle(int32_t Gb)
         theta = 0;
     }
     G = ((float)Gb)/16.4;
-    theta = theta + G*TIEMPO;
+    theta = theta + G*sampling_time;
     printf("Gyro: %f en grados/s \r\n", G);
     printf("Ángulo final: %f en grados \r\n", theta);
 }
