@@ -11,6 +11,19 @@
 #include "file_system.h"
 #include "config.h"
 
+// =============================================================================
+//  VERSION INFO !!!IMPORTANT!!
+// =============================================================================
+
+/*
+This repo works correctly with the following conditions 
+
++ ESP8266 RTOS SDK commit 9f37d6900f (HEAD -> master)
++ LWIP ffd1059
++ mbedtls 9ef92c55
++ cJSON v1.7.12
+**/
+
 
 // =============================================================================
 // external testing variables
