@@ -29,6 +29,7 @@
 #include <lwip/netdb.h>
 
 #include "config.h"
+#include "tcp_client.h"
 
 // =============================================================================
 // Local variables
@@ -118,28 +119,37 @@ static void tcp_client_task(void *pvParameters)
         // 4. Wait Response
         // =============================================================================
         int len = recv_msg(rx_buffer,sizeof(rx_buffer));
-        if (len > 0) {
-            rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string
-            ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
-            ESP_LOGI(TAG, "%s", rx_buffer);
-            // =============================================================================
-            // 5. Request first chunk
-            // =============================================================================
-            if(strcmp (rx_buffer, "READY TO SYNC\n") == 0){
-             send_msg("CHUNK :)\n");
+        memset(rx_buffer+(len-2),0,3);
+        int tries = 0;
+        while(strcmp (rx_buffer, "READY TO SYNC") != 0 && tries < MAX_TRIES){
+            send_msg("NACK\n");
+            len = recv_msg(rx_buffer,sizeof(rx_buffer));
+            if (len > 0) {
+                memset(rx_buffer+(len-2),0,3);
+                ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
+                ESP_LOGI(TAG, "%s", rx_buffer);
             }
+            tries++;
+            //printf("Try (%i)\r\n",tries);
         }
+        // =============================================================================
+        // 5. Request first chunk
+        // =============================================================================
+    
+
+        send_msg("CHUNK :)\n");
+        
         // =============================================================================
         // 6. Loop comunication
         // =============================================================================
         while (1) {
           
             if (recv_msg(rx_buffer,sizeof(rx_buffer)) > 0) {
-                rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string
+                memset(rx_buffer+(len-1),0,3);
                 ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
                 ESP_LOGI(TAG, "%s", rx_buffer);
                 
-                if(strcmp (rx_buffer, "ACK\n") == 0){
+                if(strcmp (rx_buffer, "ACK") == 0){
                     send_msg("CHUNK :)\n");
                 }else{
                     break;
