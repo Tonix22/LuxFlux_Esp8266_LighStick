@@ -143,15 +143,18 @@ static void tcp_client_task(void *pvParameters)
         // 6. Loop comunication
         // =============================================================================
         while (1) {
-          
-            if (recv_msg(rx_buffer,sizeof(rx_buffer)) > 0) {
-                memset(rx_buffer+(len-1),0,3);
+            memset(rx_buffer,0,sizeof(rx_buffer)); //flush a rx_buffer
+            len = recv_msg(rx_buffer,sizeof(rx_buffer));
+            if ( len > 0) {
+                memset(rx_buffer+(len-2),0,3);
                 ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
                 ESP_LOGI(TAG, "%s", rx_buffer);
                 
                 if(strcmp (rx_buffer, "ACK") == 0){
                     send_msg("CHUNK :)\n");
                 }else{
+                    send_msg("NACK\n");
+                    ESP_LOGI(TAG, "BUFFER -> %s", rx_buffer);
                     break;
                 }
             }
