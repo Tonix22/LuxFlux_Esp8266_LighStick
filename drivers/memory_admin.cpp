@@ -3,12 +3,14 @@
 // =============================================================================
 
 #include <stdio.h>
+#include <ctype.h>
 #include <vector>
 #include <list>
 #include "FreeRTOS_wrapper.h"
 #include "memory_admin.h"
 #include "Light_effects.h"
 #include "structs.h"
+
 
 // =============================================================================
 // Function prototypes
@@ -130,4 +132,45 @@ inline void rd_flash_wr_class(feature_t feature)
     frame->group.clear();
     delete(chunk);
     delete(frame);
+}
+
+/** 
+ * @brief
+ * 
+ * 
+*/
+bool wr_flash(char * msg){
+    int pixel_cnt=0;
+    Frame frame;
+    Block group;
+    char * ptr;
+      
+    //printf ("Splitting string \"%s\" into tokens:\n",msg[i]);
+    //PRIMER BLOQUE
+    ptr = strtok (msg,"(,)");
+    
+    while(pixel_cnt < 8){
+
+        if(isdigit(*ptr)){
+
+            group.pixels = atoi(ptr);
+            
+            pixel_cnt += group.pixels;
+
+            PARSE_COLOR(RED); 
+            PARSE_COLOR(GREEN);
+            PARSE_COLOR(BLUE);
+            TOKEN();
+
+            frame.group.push_back(group); // insert group in block
+            printf("%d(%d,%d,%d),",group.pixels,group.color.RED,group.color.GREEN,group.color.BLUE);
+        }else{
+            return false;
+        }
+    }
+
+    frame.time = atoi(ptr);
+    printf("%d\r\n",frame.time);
+    pixel_cnt=0;
+    return true;
 }

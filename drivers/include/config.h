@@ -28,7 +28,7 @@
 #define DEBUG_MENU  (0)
 #define IMU_TEST    (0)
 #define PIXEL_TEST  (0)
-#define WIFI_TEST   (0)
+#define WIFI_TEST   (1)
 
 // =============================================================================
 // WIFI
@@ -44,8 +44,8 @@
 // STATION
 // =============================================================================
 #if WIFI_HOME
-#define ESP_WIFI_SSID      "IZZI-99CD"
-#define ESP_WIFI_PASS      "704FB81799CD"
+#define ESP_WIFI_SSID      "DEPTO_201"
+#define ESP_WIFI_PASS      "sxk!0363" 
 #endif
 
 #define ESP_MAXIMUM_RETRY  10
@@ -57,6 +57,7 @@
 
 #define LEFT_STICK_IP "192.168.4.1"
 #define RIGHT_STICK_IP "192.168.5.1"
+#define LAP_IP "192.168.201.174"
 #define PORT 3333
 
 //This defines changes depending on upper defines
@@ -82,8 +83,17 @@
     #define ESP_WIFI_PASS      "DiaboloSticks"
     #endif
         //TCP
-    #define HOST_IP_ADDR RIGHT_STICK_IP
+    #if WIFI_TEST
+
+        #define HOST_IP_ADDR LAP_IP
+
+    #else
+    
+         #define HOST_IP_ADDR RIGHT_STICK_IP
+
+    #endif
     
 #endif
+
 
 #endif
