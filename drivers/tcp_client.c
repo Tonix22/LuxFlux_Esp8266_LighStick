@@ -161,19 +161,24 @@ static void tcp_client_task(void *pvParameters)
                     ESP_LOGI(TAG, "%s", rx_buffer);
 
                 //CHECK IF IS EOF (go to? if EOF)
-                if(strcmp(rx_buffer,"EOF")){
+                if(strcmp(rx_buffer,"EOF") == 0){
 
                     //CLOSE FILE
                     close_file();
                 
                     break;
                 }
-                //TODO PARSE THE CHUNK
-                wr_flash(rx_buffer);
+                
+                //Open File
+                if(check_file_exist(File_names[i])){
+                    delete_file(File_names[i]);
+                }
+                file_open(WRITE,File_names[i]);
 
-                //TODO CHECK IF CHUNK IS VALID
-
-                //TODO WRITE CHUNK
+                //PARSE THE CHUNK
+                parse_chunk(rx_buffer);
+                
+                close_file();
 
                 }
             }

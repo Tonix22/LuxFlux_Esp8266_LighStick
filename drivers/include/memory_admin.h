@@ -12,7 +12,7 @@
 #define TOKEN() ptr = strtok (NULL,"(,)");
 
 #define PARSE_COLOR(COLOR)  TOKEN()\
-                            group.color.COLOR = atoi(ptr);\
+                            group->color.COLOR = atoi(ptr);\
 
 // =============================================================================
 // EVENT GROUPS BITS DEFINES
@@ -35,7 +35,7 @@ extern "C"
     EventBits_t file_exist(feature_t feature);
     void file_read(feature_t feature);
     void init_flash_status_group(void);
-    bool wr_flash(char * msg);
+    bool parse_chunk(char * msg);
     #ifdef __cplusplus
     // =============================================================================
     // C++ INCLUDES

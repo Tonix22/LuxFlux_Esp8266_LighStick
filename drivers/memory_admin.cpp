@@ -10,6 +10,7 @@
 #include "memory_admin.h"
 #include "Light_effects.h"
 #include "structs.h"
+#include "file_system.h"
 
 
 // =============================================================================
@@ -139,10 +140,9 @@ inline void rd_flash_wr_class(feature_t feature)
  * 
  * 
 */
-bool wr_flash(char * msg){
-    int pixel_cnt=0;
-    Frame frame;
-    Block group;
+bool parse_chunk(char * msg){
+    int pixel_cnt=0, time_frame=0;
+    Block *group = new (Block);
     char * ptr;
       
     //printf ("Splitting string \"%s\" into tokens:\n",msg[i]);
@@ -153,24 +153,31 @@ bool wr_flash(char * msg){
 
         if(isdigit(*ptr)){
 
-            group.pixels = atoi(ptr);
+            group->pixels = atoi(ptr);
             
-            pixel_cnt += group.pixels;
+            pixel_cnt += group->pixels;
 
             PARSE_COLOR(RED); 
             PARSE_COLOR(GREEN);
             PARSE_COLOR(BLUE);
             TOKEN();
 
-            frame.group.push_back(group); // insert group in block
-            printf("%d(%d,%d,%d),",group.pixels,group.color.RED,group.color.GREEN,group.color.BLUE);
+            //frame.group.push_back(group); // insert group in block
+            //printf("%d(%d,%d,%d),",group.pixels,group.color.RED,group.color.GREEN,group.color.BLUE); // ()
+            write_chunck(&group,sizeof(Block),1);
         }else{
             return false;
         }
     }
 
-    frame.time = atoi(ptr);
-    printf("%d\r\n",frame.time);
-    pixel_cnt=0;
+    delete group;
+    group = NULL;
+    if(pixel_cnt != 8){
+        return false;
+    }
+
+    time_frame = atoi(ptr);
+    printf("%d\r\n",time_frame);
+    write_chunck(&time_frame,sizeof(uint32_t),1);
     return true;
 }
