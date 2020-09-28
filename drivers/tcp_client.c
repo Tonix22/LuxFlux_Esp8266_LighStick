@@ -146,7 +146,10 @@ static void tcp_client_task(void *pvParameters)
         for (; i < MAX_features;i++){
             send_msg(File_names[i]);
                     
-            // Open file 
+        // Open file 
+            if(check_file_exist(File_names[i])){
+                delete_file(File_names[i]);
+            }
             file_open(WRITE,File_names[i]);
         // =============================================================================
         // 6. Loop comunication
@@ -162,27 +165,16 @@ static void tcp_client_task(void *pvParameters)
 
                 //CHECK IF IS EOF (go to? if EOF)
                 if(strcmp(rx_buffer,"EOF") == 0){
-
-                    //CLOSE FILE
-                    close_file();
                 
                     break;
                 }
                 
-                //Open File
-                if(check_file_exist(File_names[i])){
-                    delete_file(File_names[i]);
-                }
-                file_open(WRITE,File_names[i]);
-
                 //PARSE THE CHUNK
                 parse_chunk(rx_buffer);
                 
-                close_file();
-
                 }
             }
-        
+               close_file();
 
             vTaskDelay(2000 / portTICK_PERIOD_MS);
         }
