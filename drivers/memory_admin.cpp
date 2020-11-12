@@ -109,7 +109,7 @@ inline void rd_flash_wr_class(feature_t feature)
                 pixels_cnt+=chunk->pixels;
                 frame->group.push_back(*chunk); // push pixels in a group until fill ledstick
                 //DEBUG :)
-                printf("CHUNK: PIXELS %d, R= %d,G= %d,B= %d \r\n",chunk->pixels,chunk->color.RED,chunk->color.GREEN,chunk->color.BLUE);
+               // printf("CHUNK: PIXELS %d, R= %d,G= %d,B= %d \r\n",chunk->pixels,chunk->color.RED,chunk->color.GREEN,chunk->color.BLUE);
             }
             else {goto Terminate;} // frame is invalid or file is and its end
         }
@@ -118,7 +118,7 @@ inline void rd_flash_wr_class(feature_t feature)
             pixels_cnt = 0;
             valid = read_chunk(&(frame->time), sizeof(uint32_t),1); // get Frame time
             //DEBUG :)
-            printf("TIME: %d",frame->time);
+           // printf("TIME: %d",frame->time);
         }
         else // invalid Time format, last data is ever time
         {
@@ -167,7 +167,7 @@ bool parse_chunk(char * msg){
             TOKEN();
 
             //frame.group.push_back(group); // insert group in block
-            printf("%d(%d,%d,%d),",group->pixels, group->color.RED, group->color.GREEN, group->color.BLUE); // ()
+           // printf("%d(%d,%d,%d),",group->pixels, group->color.RED, group->color.GREEN, group->color.BLUE); // ()
 
             write_chunck(group,sizeof(Block),1);
         }else{

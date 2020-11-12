@@ -87,7 +87,7 @@ bool check_file_exist(const char* name)
     {
         state = true;
     }
-    printf("file exist: %s \r\n",state?("Yes"):("NO"));
+    //printf("file exist: %s \r\n",state?("Yes"):("NO"));
     return state;
 }
 /**

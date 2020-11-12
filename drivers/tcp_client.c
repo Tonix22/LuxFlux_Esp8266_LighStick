@@ -124,6 +124,9 @@ static void tcp_client_task(void *pvParameters)
         // =============================================================================
         int len = recv_msg(rx_buffer,sizeof(rx_buffer));
         memset(rx_buffer+(len-2),0,3);
+        ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
+        ESP_LOGI(TAG, "BUFFER: %s",rx_buffer );
+        
         int tries = 0;
         while(strcmp (rx_buffer, "READY TO SYNC") != 0 && tries < MAX_TRIES){
             send_msg("NACK\n");
@@ -163,15 +166,14 @@ static void tcp_client_task(void *pvParameters)
                     ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
                     ESP_LOGI(TAG, "%s", rx_buffer);
 
-                //CHECK IF IS EOF (go to? if EOF)
-                if(strcmp(rx_buffer,"EOF") == 0){
-                
-                    break;
-                }
-                
-                //PARSE THE CHUNK
-                parse_chunk(rx_buffer);
-                
+                    //CHECK IF IS EOF (go to? if EOF)
+                    if(strcmp(rx_buffer,"EOF") == 0){
+                        break;
+                    }
+
+                    //PARSE THE CHUNK
+                    parse_chunk(rx_buffer);
+                    send_msg("ACK\n");
                 }
             }
                close_file();
@@ -179,11 +181,13 @@ static void tcp_client_task(void *pvParameters)
             vTaskDelay(2000 / portTICK_PERIOD_MS);
         }
 
+
         if (sock != -1) {
             ESP_LOGE(TAG, "Shutting down socket and restarting...");
             shutdown(sock, 0);
             close(sock);
         }
+         esp_restart();
     }
     vTaskDelete(NULL);
 }
