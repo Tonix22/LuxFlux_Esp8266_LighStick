@@ -154,6 +154,7 @@ void IDLE_HW_TIMER(void *arg)
 
     if(LedStick->seq_it != LedStick->sequence.end())//pending frames
     {
+        
         hw_timer_alarm_us(ms_to_us(LedStick->seq_it->time), true);//Load next timer
     }
     else // buffer is over,go to load more frames
@@ -171,14 +172,22 @@ EventBits_t IDLE_light()
     LedStick->seq_it = LedStick->sequence.begin(); // point to frames beginig
     /*init hw timer*/
     hw_timer_init(IDLE_HW_TIMER, NULL);
-    hw_timer_alarm_us(ms_to_us(LedStick->seq_it->time), true);
-
+    //hw_timer_alarm_us(ms_to_us(LedStick->seq_it->time), true);
+    if(LedStick->seq_it != LedStick->sequence.end())//pending frames
+    {
+        //printf("TIME: %d \r\n",LedStick->seq_it->time);
+        hw_timer_alarm_us(ms_to_us(LedStick->seq_it->time), true);//Load next timer
+    }else
+    {
+        xEventGroupSetBits(Menu_status,IDLE_BUFFER_END);
+    }
     /*Wait buffer is empty or abort signal request*/
     EventBits_t wait_buffer = xEventGroupWaitBits(Menu_status,
             ABORT|IDLE_BUFFER_END,
             pdFALSE,
             pdFALSE,
             portMAX_DELAY); // wait until seq is finished
+
 
     /*Deallocate timer info*/
     hw_timer_deinit();
