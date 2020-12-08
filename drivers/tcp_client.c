@@ -81,7 +81,7 @@ static void tcp_client_task(void *pvParameters)
     char addr_str[128];
     int addr_family;
     int ip_protocol;
-
+    int trys = 0;
     while (1) {
         struct sockaddr_in destAddr;
         destAddr.sin_addr.s_addr = inet_addr(HOST_IP_ADDR);
@@ -90,37 +90,64 @@ static void tcp_client_task(void *pvParameters)
         addr_family = AF_INET;
         ip_protocol = IPPROTO_IP;
         inet_ntoa_r(destAddr.sin_addr, addr_str, sizeof(addr_str) - 1);
-
-        sock =  socket(addr_family, SOCK_STREAM, ip_protocol);
-        if (sock < 0) {
-            ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
-            break;
+        
+        do
+        {
+            sock =  socket(addr_family, SOCK_STREAM, ip_protocol);
+            if(sock < 0)
+            {
+                ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
+            }
+            else
+            {
+                ESP_LOGI(TAG, "Socket created");
+            }
+            vTaskDelay(1000/ portTICK_RATE_MS);
+            trys++;
+        }while(sock < 0 && trys != 10);
+        if(trys == 10)
+        {
+            //ESP_LOGW(TAG, "MAX TRYS SOCKECT CREATE FAILED");
+            esp_restart();
         }
-        ESP_LOGI(TAG, "Socket created");
-
         // =============================================================================
         // 2. Socket Connect
         // =============================================================================
-        int err = connect(sock, (struct sockaddr *)&destAddr, sizeof(destAddr));
-        if (err != 0) {
-            ESP_LOGE(TAG, "Socket unable to connect: errno %d", errno);
+        int err ;
+        trys = 0;
+        do
+        {
+            err = connect(sock, (struct sockaddr *)&destAddr, sizeof(destAddr));
+            if (err != 0) {
+                ESP_LOGE(TAG, "Socket unable to connect: errno %d", errno);
+            }
+            else
+            {
+                ESP_LOGI(TAG, "Successfully connected");
+            } 
+            vTaskDelay(1000/ portTICK_RATE_MS);
+            trys++;
+        } while (err != 0 && trys != 10);
+        if(trys == 10)
+        {
+            //ESP_LOGW(TAG, "MAX SOCKET CONECT TRYS");
+            esp_restart();
         }
-        ESP_LOGI(TAG, "Successfully connected");
 
         // =============================================================================
-        // 2. Socket Connect
+        // 3. Socket Connect
         // =============================================================================
         /************** SEND FIRST MESSAGE ******************/
         
-        while(send_msg("SYNC\n")<0){
+        while(send_msg("SYNC\n") < 0){
                 vTaskDelay(1000/ portTICK_RATE_MS);    
         }
         // =============================================================================
-        // 3. Send First Message
+        // 4. Send First Message
         // =============================================================================
         
         // =============================================================================
-        // 4. Wait Response
+        // 5. Wait Response
         // =============================================================================
         int len = recv_msg(rx_buffer,sizeof(rx_buffer));
         memset(rx_buffer+(len-2),0,3);
@@ -141,7 +168,7 @@ static void tcp_client_task(void *pvParameters)
         }
 
         // =============================================================================
-        // 5. Request first chunk of File
+        // 6. Request first chunk of File
         // =============================================================================
         
         //RECORRE TODOS LOS ARCHIVOS
@@ -155,7 +182,7 @@ static void tcp_client_task(void *pvParameters)
             }
             file_open(WRITE,File_names[i]);
         // =============================================================================
-        // 6. Loop comunication
+        // 7. Loop comunication
         // =============================================================================
             while (1) {
                 memset(rx_buffer,0,sizeof(rx_buffer)); //flush a rx_buffer
@@ -187,7 +214,7 @@ static void tcp_client_task(void *pvParameters)
             shutdown(sock, 0);
             close(sock);
         }
-         esp_restart();
+        esp_restart();
     }
     vTaskDelete(NULL);
 }
