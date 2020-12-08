@@ -24,7 +24,7 @@ static const char *TAG = "wifi Driver";
  * - we failed to connect after the maximum amount of retries */
 static EventGroupHandle_t s_wifi_event_group;
 
-static int s_retry_num = 0; // Max retryes number counter
+//static int s_retry_num = 0; // Max retryes number counter
 
 // =============================================================================
 // Functions Prototypes
@@ -49,7 +49,7 @@ void DHCP_setup(void);
  * @param event_id WIFI_EVENT_STA_START, WIFI_EVENT_STA_DISCONNECTED, IP_EVENT_STA_GOT_IP
  * @param event_data provides info of ip
  */
-
+/*
 static void station_event_handler(void* arg, esp_event_base_t event_base,
                                   int32_t event_id, void* event_data){
 
@@ -87,6 +87,7 @@ static void station_event_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
+*/
 /**
  * @brief Handler when ESP is an AP
  * 
@@ -95,6 +96,7 @@ static void station_event_handler(void* arg, esp_event_base_t event_base,
  * @param event_id WIFI_EVENT_AP_STACONNECTED, WIFI_EVENT_AP_STADISCONNECTED
  * @param event_data provide mac address of connected device
  */
+/*
 static void ap_event_handler(void* arg, esp_event_base_t event_base,
                                     int32_t event_id, void* event_data)
 {
@@ -109,6 +111,7 @@ static void ap_event_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
+*/
 // =============================================================================
 // 
 // ██╗    ██╗██╗███████╗██╗    ███████╗███████╗████████╗██╗   ██╗██████╗
@@ -140,10 +143,10 @@ void wifi_init_sta(void)
     s_wifi_event_group = xEventGroupCreate();
 
     wifi_set();
-
+    /*
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &station_event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &station_event_handler, NULL));
-
+    */
     wifi_config_t wifi_config = {
         .sta = {
             .ssid = ESP_WIFI_SSID,
@@ -196,7 +199,7 @@ void wifi_init_softap(void)
 {
     wifi_set();
 
-    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &ap_event_handler, NULL));
+    //ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &ap_event_handler, NULL));
     
     wifi_config_t wifi_config = {
         .ap = {
@@ -228,9 +231,9 @@ void wifi_init_softap(void)
 void wifi_deint_ap(void)
 {
     esp_wifi_stop();
-    esp_event_loop_delete_default();
+    //esp_event_loop_delete_default();
     esp_wifi_deinit();
-    esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &ap_event_handler);    
+    //esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &ap_event_handler);    
 }
 /**
  * @brief Change DHCP IPS
