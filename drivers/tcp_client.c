@@ -29,11 +29,15 @@
 #include <lwip/netdb.h>
 
 #include "config.h"
+#include "tcp_client.h"
+#include "file_system.h"
+#include "memory_admin.h"
 
+
+ extern char  File_names[MAX_features][MAX_NAME_SIZE];
 // =============================================================================
 // Local variables
 // =============================================================================
-
 
 static const char *TAG = "example";
 char *payload = "Message from ESP32 ";
@@ -55,6 +59,7 @@ int recv_msg(char* msg, int lenght){
     }
     return len;
 }
+
 
 /**
  * @brief 
@@ -118,42 +123,71 @@ static void tcp_client_task(void *pvParameters)
         // 4. Wait Response
         // =============================================================================
         int len = recv_msg(rx_buffer,sizeof(rx_buffer));
-        if (len > 0) {
-            rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string
-            ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
-            ESP_LOGI(TAG, "%s", rx_buffer);
-            // =============================================================================
-            // 5. Request first chunk
-            // =============================================================================
-            if(strcmp (rx_buffer, "READY TO SYNC\n") == 0){
-             send_msg("CHUNK :)\n");
+        memset(rx_buffer+(len-2),0,3);
+        ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
+        ESP_LOGI(TAG, "BUFFER: %s",rx_buffer );
+        
+        int tries = 0;
+        while(strcmp (rx_buffer, "READY TO SYNC") != 0 && tries < MAX_TRIES){
+            send_msg("NACK\n");
+            len = recv_msg(rx_buffer,sizeof(rx_buffer));
+            if (len > 0) {
+                memset(rx_buffer+(len-2),0,3);
+                ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
+                ESP_LOGI(TAG, "%s", rx_buffer);
             }
+            tries++;
+            //printf("Try (%i)\r\n",tries);
         }
+
+        // =============================================================================
+        // 5. Request first chunk of File
+        // =============================================================================
+        
+        //RECORRE TODOS LOS ARCHIVOS
+        int i=0;
+        for (; i < MAX_features;i++){
+            send_msg(File_names[i]);
+                    
+        // Open file 
+            if(check_file_exist(File_names[i])){
+                delete_file(File_names[i]);
+            }
+            file_open(WRITE,File_names[i]);
         // =============================================================================
         // 6. Loop comunication
         // =============================================================================
-        while (1) {
-          
-            if (recv_msg(rx_buffer,sizeof(rx_buffer)) > 0) {
-                rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string
-                ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
-                ESP_LOGI(TAG, "%s", rx_buffer);
-                
-                if(strcmp (rx_buffer, "ACK\n") == 0){
-                    send_msg("CHUNK :)\n");
-                }else{
-                    break;
+            while (1) {
+                memset(rx_buffer,0,sizeof(rx_buffer)); //flush a rx_buffer
+                //RECEIVE CHUNK :)
+                len = recv_msg(rx_buffer,sizeof(rx_buffer));
+                if ( len > 0) {
+                    memset(rx_buffer+(len-2),0,3);
+                    ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
+                    ESP_LOGI(TAG, "%s", rx_buffer);
+
+                    //CHECK IF IS EOF (go to? if EOF)
+                    if(strcmp(rx_buffer,"EOF") == 0){
+                        break;
+                    }
+
+                    //PARSE THE CHUNK
+                    parse_chunk(rx_buffer);
+                    send_msg("ACK\n");
                 }
             }
+               close_file();
 
             vTaskDelay(2000 / portTICK_PERIOD_MS);
         }
+
 
         if (sock != -1) {
             ESP_LOGE(TAG, "Shutting down socket and restarting...");
             shutdown(sock, 0);
             close(sock);
         }
+         esp_restart();
     }
     vTaskDelete(NULL);
 }

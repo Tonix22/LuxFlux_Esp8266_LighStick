@@ -3,12 +3,15 @@
 // =============================================================================
 
 #include <stdio.h>
+#include <ctype.h>
 #include <vector>
 #include <list>
 #include "FreeRTOS_wrapper.h"
 #include "memory_admin.h"
 #include "Light_effects.h"
 #include "structs.h"
+#include "file_system.h"
+
 
 // =============================================================================
 // Function prototypes
@@ -105,6 +108,8 @@ inline void rd_flash_wr_class(feature_t feature)
             {
                 pixels_cnt+=chunk->pixels;
                 frame->group.push_back(*chunk); // push pixels in a group until fill ledstick
+                //DEBUG :)
+               // printf("CHUNK: PIXELS %d, R= %d,G= %d,B= %d \r\n",chunk->pixels,chunk->color.RED,chunk->color.GREEN,chunk->color.BLUE);
             }
             else {goto Terminate;} // frame is invalid or file is and its end
         }
@@ -112,6 +117,8 @@ inline void rd_flash_wr_class(feature_t feature)
         {
             pixels_cnt = 0;
             valid = read_chunk(&(frame->time), sizeof(uint32_t),1); // get Frame time
+            //DEBUG :)
+           // printf("TIME: %d",frame->time);
         }
         else // invalid Time format, last data is ever time
         {
@@ -130,4 +137,52 @@ inline void rd_flash_wr_class(feature_t feature)
     frame->group.clear();
     delete(chunk);
     delete(frame);
+}
+
+/** 
+ * @brief
+ * 
+ * 
+*/
+bool parse_chunk(char * msg){
+    int pixel_cnt=0, time_frame=0;
+    Block *group = new (Block);
+    char * ptr;
+      
+    //printf ("Splitting string \"%s\" into tokens:\n",msg[i]);
+    //PRIMER BLOQUE
+    ptr = strtok (msg,"(,)");
+    
+    while(pixel_cnt < 8){
+
+        if(isdigit(*ptr)){
+
+            group->pixels = atoi(ptr);
+            
+            pixel_cnt += group->pixels;
+
+            PARSE_COLOR(RED); 
+            PARSE_COLOR(GREEN);
+            PARSE_COLOR(BLUE);
+            TOKEN();
+
+            //frame.group.push_back(group); // insert group in block
+           // printf("%d(%d,%d,%d),",group->pixels, group->color.RED, group->color.GREEN, group->color.BLUE); // ()
+
+            write_chunck(group,sizeof(Block),1);
+        }else{
+            return false;
+        }
+    }
+
+    delete group;
+    group = NULL;
+    if(pixel_cnt != 8){
+        return false;
+    }
+
+    time_frame = atoi(ptr);
+    printf("%d\r\n",time_frame);
+    write_chunck(&time_frame,sizeof(uint32_t),1);
+    return true;
 }

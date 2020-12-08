@@ -399,13 +399,16 @@ void wifi_hold()
  */
 void Process_Wifi_Comm(Channel* feature)
 {   
+    //printf("before?\r\n");
     feature->clear_last_menu();  //Clear last calls
+    //printf("clear_last_menu-> \r\n");
     feature->init_wifi_service();//AP or Station
     feature->init_comm_service();//Client or server
     do
     {   
-        feature->state = STOP; //TODO testing porpuose
-        wifi_hold();
+        vTaskDelay(2000/ portTICK_RATE_MS);
+        //feature->state = STOP; //TODO testing porpuose
+        //wifi_hold();
 
     }while(feature->state != STOP);
     
