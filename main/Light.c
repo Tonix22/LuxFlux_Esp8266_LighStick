@@ -74,7 +74,7 @@ void app_main(void)
     // ================================
     file_system_init(); // 4
    // write_to_rith();//TODO testing purpse
-    write_to_idle();//TODO testing purpse
+    //write_to_idle();//TODO testing purpse
     // ================================
     // Tasks for Ledstick and IMU
     // ================================
