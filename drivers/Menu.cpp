@@ -219,7 +219,8 @@ void idle_subtask(void *arg)
  * 3. Process Feature -> These feature will only setup interrupt
  * Sound will be managed as interrupts and it will comunicate directly with
  * LIGHT, so this task will NOT HAVE A CYCLE.
- * 4. Delete Task
+ * 4. Report Task Death
+ * 5. Delete Task
  * @param arg 
  */
 void rith_subtask(void *arg)
@@ -228,7 +229,8 @@ void rith_subtask(void *arg)
     abort_last_menu(); // 1
     Riht_Light* rith_proc = new Riht_Light(RITH_feature);// 2
     Process_feature(rith_proc);// 3
-    vTaskDelete(NULL);// 4
+    xEventGroupSetBits(Menu_status,TASKDEATH);// 4
+    vTaskDelete(NULL);// 5
 }
 
 /* ============================================================================

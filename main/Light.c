@@ -60,7 +60,7 @@ extern xQueueHandle imu_cntrl_queue;
 
 void app_main(void)
 {
-    check_version();//VERSION INFO !!!IMPORTANT!!
+    //check_version();//VERSION INFO !!!IMPORTANT!!
 
     esp_set_cpu_freq(ESP_CPU_FREQ_160M); // 1
     // ================================
@@ -74,7 +74,7 @@ void app_main(void)
     // ================================
     file_system_init(); // 4
    // write_to_rith();//TODO testing purpse
-   // write_to_idle();//TODO testing purpse
+    //write_to_idle();//TODO testing purpse
     // ================================
     // Tasks for Ledstick and IMU
     // ================================
