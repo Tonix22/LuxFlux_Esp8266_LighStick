@@ -76,7 +76,7 @@ static void tcp_server_task(void *pvParameters)
         };
         addr_family = AF_INET;
         ip_protocol = IPPROTO_IP;
-        inet_ntoa_r(destAddr.sin_addr, addr_str, sizeof(addr_str) - 1);
+        //inet_ntoa_r(destAddr.sin_addr, addr_str, sizeof(addr_str) - 1);
 
 
         int listen_sock = socket(addr_family, SOCK_STREAM, ip_protocol);

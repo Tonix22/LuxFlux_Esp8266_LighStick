@@ -256,7 +256,7 @@ class Reciever: public Channel
     }
     void init_comm_service()
     {
-        //server_init();
+        server_init();
     }
     void set_state() // TODO insert logic here
     {
