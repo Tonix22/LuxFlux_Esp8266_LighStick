@@ -29,11 +29,15 @@
 #include <lwip/netdb.h>
 
 #include "config.h"
+#include "tcp_client.h"
+#include "file_system.h"
+#include "memory_admin.h"
 // =============================================================================
 // DEFINES
 // =============================================================================
 #define SEND_NACK message_response(&sock,"NACK\n")
 #define SEND_ACK message_response(&sock,"ACK\n")
+#define MAX 80
 
 static const char *TAG = "SERVER";
 
@@ -44,6 +48,46 @@ bool message_response(int* sock, const char* msg){
         return false;
     }
     return true;
+}
+
+
+//Chat between client ans server
+void comunication(int* sock){
+    char rx_buffer [MAX];
+    Block * group;
+    int valid_msg=0;
+
+    memset(rx_buffer,0,MAX);// flush buffer
+    recv(*sock, rx_buffer, sizeof(rx_buffer));
+    printf("From client: %s \r\n", rx_buffer); 
+
+    if(strcmp(rx_buffer,"SYNC\n") == 0){
+		send(*sock, "READY TO SYNC", 16, 0);
+		printf("READY TO SYNC\r\n"); 
+		valid_msg = 1;
+	}else if(strcmp(rx_buffer,"FOTA\n") == 0){
+		send(*sock, "READY TO FOTA", 16, 0);
+		valid_msg = 1;
+	}else{
+		send(*sock, "NACK", 5, 0); 
+	}
+
+    int i;
+    for (i=0; i < MAX_features;i++){
+        memset(rx_buffer,0,MAX);// flush buffer
+        recv(*sock, rx_buffer, sizeof(rx_buffer));//Receive File Name
+        printf("From client: %s \r\n", rx_buffer); 
+
+        file_open(READ,File_names[i]);
+
+        while (valid_msg){
+            memset(rx_buffer,0,MAX);// flush buffer
+            read_chunk();
+        }
+    }
+
+
+
 }
 
 /**
@@ -115,7 +159,9 @@ static void tcp_server_task(void *pvParameters)
         }
         ESP_LOGI(TAG, "Socket accepted");
 
-        while (1) {
+        comunication(&sock);
+
+       /* while (1) {
 
             // =============================================================================
             // 3. Wait First Message
@@ -171,7 +217,7 @@ static void tcp_server_task(void *pvParameters)
                     }
                 }
             }
-        }
+        }*/
 
         SEND_NACK;
 
