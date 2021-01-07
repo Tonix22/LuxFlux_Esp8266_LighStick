@@ -32,12 +32,16 @@
 #include "tcp_client.h"
 #include "file_system.h"
 #include "memory_admin.h"
+#include "Light_effects.h"
+
+extern Light* LedStick;
 // =============================================================================
 // DEFINES
 // =============================================================================
 #define SEND_NACK message_response(&sock,"NACK\n")
 #define SEND_ACK message_response(&sock,"ACK\n")
-#define MAX 80
+#define MAX 128
+#define PIXELS 8
 
 static const char *TAG = "SERVER";
 
@@ -54,8 +58,11 @@ bool message_response(int* sock, const char* msg){
 //Chat between client ans server
 void comunication(int* sock){
     char rx_buffer [MAX];
-    Block * group;
-    int valid_msg=0;
+    Block* chunk    =  malloc(sizeof(Block));
+    uint32_t time   = 0;
+    char pixels_cnt = 0;
+    bool valid_msg  = false;
+    char tempbuff [MAX];
 
     memset(rx_buffer,0,MAX);// flush buffer
     recv(*sock, rx_buffer, sizeof(rx_buffer));
@@ -64,10 +71,10 @@ void comunication(int* sock){
     if(strcmp(rx_buffer,"SYNC\n") == 0){
 		send(*sock, "READY TO SYNC", 16, 0);
 		printf("READY TO SYNC\r\n"); 
-		valid_msg = 1;
+		valid_msg = true;
 	}else if(strcmp(rx_buffer,"FOTA\n") == 0){
 		send(*sock, "READY TO FOTA", 16, 0);
-		valid_msg = 1;
+		valid_msg = true;
 	}else{
 		send(*sock, "NACK", 5, 0); 
 	}
@@ -80,10 +87,29 @@ void comunication(int* sock){
 
         file_open(READ,File_names[i]);
 
-        while (valid_msg){
-            memset(rx_buffer,0,MAX);// flush buffer
-            read_chunk();
+       
+        while(valid_msg)
+        {
+            
+             while (pixels_cnt <  && valid_msg)
+            {
+                valid_msg = read_chunk(chunk,sizeof(Block),1);
+                sprintf(tempbuff,"%d(%d,%d,%d),",chunk->pixels, chunk->color.RED, chunk->color.GREEN, chunk->color.BLUE);
+                strcat(rx_buffer,tempbuff);
+                pixels_cnt+=chunk->pixels;
+             }
+        
+            valid_msg = read_chunk(&time,sizeof(uint32_t),1);
+            sprintf(tempbuff,"%d",time);
+            strcat(rx_buffer,tempbuff);
+            printf("To client: %s",rx_buffer);
+            message_response(sock,rx_buffer);
+            time = 0;
+            pixels_cnt = 0;
+            memset(tempbuff,0,MAX);// flush buffer
+            
         }
+        close_file();
     }
 
 
