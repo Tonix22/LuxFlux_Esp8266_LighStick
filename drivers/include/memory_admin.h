@@ -36,6 +36,7 @@ extern "C"
     void file_read(feature_t feature);
     void init_flash_status_group(void);
     bool parse_chunk(char * msg);
+    int get_pixels();
     #ifdef __cplusplus
     // =============================================================================
     // C++ INCLUDES

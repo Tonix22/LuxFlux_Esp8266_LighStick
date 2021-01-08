@@ -32,9 +32,7 @@
 #include "tcp_client.h"
 #include "file_system.h"
 #include "memory_admin.h"
-#include "Light_effects.h"
 
-extern Light* LedStick;
 // =============================================================================
 // DEFINES
 // =============================================================================
@@ -63,6 +61,7 @@ void comunication(int* sock){
     char pixels_cnt = 0;
     bool valid_msg  = false;
     char tempbuff [MAX];
+    int num_pixels = get_pixels();
 
     memset(rx_buffer,0,MAX);// flush buffer
     recv(*sock, rx_buffer, sizeof(rx_buffer));
@@ -91,7 +90,7 @@ void comunication(int* sock){
         while(valid_msg)
         {
             
-             while (pixels_cnt <  && valid_msg)
+             while (pixels_cnt < num_pixels  && valid_msg)
             {
                 valid_msg = read_chunk(chunk,sizeof(Block),1);
                 sprintf(tempbuff,"%d(%d,%d,%d),",chunk->pixels, chunk->color.RED, chunk->color.GREEN, chunk->color.BLUE);
