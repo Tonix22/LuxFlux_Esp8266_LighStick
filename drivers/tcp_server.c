@@ -108,10 +108,11 @@ void comunication(int* sock){
             memset(tempbuff,0,MAX);// flush buffer
             
         }
+        
         close_file();
     }
 
-
+    free(chunk);
 
 }
 
