@@ -47,12 +47,16 @@ void func(int sockfd)
         }
         int len = recv_msg(buff,sizeof(buff));
         memset(buff+(len-2),0,3);
-        printf("From Server : %s", buff);
+        printf("From Server : %s***\n", buff);
 
-        while (strcmp(buff,"READY TO SYNC") != 0){
+        if (strcmp(buff,"READY TO SYNC") != 0){
            send_msg("NACK\n");
+           printf("RIP CLIENT :P\n");
+           return;
+        }else{
+            send_msg("ACK\n");
         }
-
+        
         int i;
         for (i=0; i < MAX_features; i++){
             send_msg(File_names[i]);
@@ -62,7 +66,7 @@ void func(int sockfd)
                 //RECEIVE CHUNK :)
                 len = recv_msg(buff,sizeof(buff));
                 if ( len > 0) {
-                    memset(buff+(len-2),0,3);
+                    memset(buff+(len-1),0,2);
                     printf("Received %s", buff);
 
                     //CHECK IF IS EOF (go to? if EOF)
@@ -73,6 +77,7 @@ void func(int sockfd)
                     //PARSE THE CHUNK
                     write_chunk(buff);
                     send_msg("ACK\n");
+                    
                 }
             }
                close_file();
@@ -96,7 +101,7 @@ int main()
   
     // assign IP, PORT 
     servaddr.sin_family = AF_INET; 
-    servaddr.sin_addr.s_addr = inet_addr("192.168.201.250"); 
+    servaddr.sin_addr.s_addr = inet_addr("192.168.4.1"); 
     servaddr.sin_port = htons(PORT); 
   
     // connect the client socket to server socket 
