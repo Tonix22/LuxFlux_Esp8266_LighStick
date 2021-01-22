@@ -88,6 +88,7 @@ void comunication(int* sock){
         printf("READY TO SYNC FAILED\r\n");
         return;
     }
+    printf("From client: %s \r\n", rx_buffer); 
 
     int i;
     while (valid_msg){
@@ -132,8 +133,9 @@ void comunication(int* sock){
 
             }
 
-            message_response(sock,"EOF");
+            message_response(sock,"EOF\n");
             close_file();
+            vTaskDelay(500 / portTICK_PERIOD_MS);
         }
     }
 
@@ -210,71 +212,13 @@ static void tcp_server_task(void *pvParameters)
 
         comunication(&sock);
 
-       /* while (1) {
-
-            // =============================================================================
-            // 3. Wait First Message
-            // =============================================================================
-
-
-            int len = recv(sock, rx_buffer, sizeof(rx_buffer) - 1, 0);
-            // Error occured during receiving
-            if (len < 0) {
-                ESP_LOGE(TAG, "recv failed: errno %d", errno);
-                break;
-            }
-            // Connection closed
-            else if (len == 0) {
-                ESP_LOGI(TAG, "Connection closed");
-                break;
-            }
-            // Data received
-            else {
-
-                inet_ntoa_r(((struct sockaddr_in *)&sourceAddr)->sin_addr.s_addr, addr_str, sizeof(addr_str) - 1);
-                // =============================================================================
-                // 4. Send Response
-                // =============================================================================
-                //rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string
-                char* ptr = strchr(rx_buffer,'\n');
-                if(ptr !=NULL){
-                    *ptr ='\0';
-                }
-                ptr = strchr(rx_buffer,'\r'); 
-                if(ptr !=NULL){
-                    *ptr ='\0';
-                }
-                ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
-                ESP_LOGI(TAG, "%s", rx_buffer);
-
-                if(first_msg){
-                    first_msg= false;
-                    if(strcmp (rx_buffer, "SYNC") == 0){
-
-                        message_response(&sock,"READY TO SYNC\n");
-
-                    }else if (strcmp (rx_buffer, "FOTA") == 0){
-
-                        message_response(&sock,"READY TO FOTA\n");
-
-                    }else{
-                        SEND_NACK;
-                    }
-                }else{
-                    if (!SEND_ACK) {
-                        break;
-                    }
-                }
-            }
-        }*/
-
-        SEND_NACK;
-
-        if (sock != -1) {
-            ESP_LOGE(TAG, "Shutting down socket and restarting...");
-            shutdown(sock, 0);
-            close(sock);
-        }
+        
+        ESP_LOGE(TAG, "Shutting down socket and restarting...");
+        shutdown(sock, 0);
+        close(sock);
+    
+        //vTaskDelay(1000 / portTICK_PERIOD_MS);
+        esp_restart();
     }
     vTaskDelete(NULL);
 }
