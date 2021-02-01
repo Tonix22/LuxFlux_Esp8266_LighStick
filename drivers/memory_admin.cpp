@@ -186,3 +186,7 @@ bool parse_chunk(char * msg){
     write_chunck(&time_frame,sizeof(uint32_t),1);
     return true;
 }
+
+int get_pixels (){
+    return LedStick->pixels;
+}

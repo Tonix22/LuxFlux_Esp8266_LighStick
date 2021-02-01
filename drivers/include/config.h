@@ -28,15 +28,15 @@
 #define DEBUG_MENU  (0)
 #define IMU_TEST    (0)
 #define PIXEL_TEST  (0)
-#define WIFI_TEST   (1)
+#define WIFI_TEST   (0)
 
 // =============================================================================
 // WIFI
 // =============================================================================
 
-#define RIGHT_STICK (0)
-#define LEFT_STICK  (1)
-#define WIFI_HOME   (1)
+#define RIGHT_STICK (1)//client
+#define LEFT_STICK  (0)//server
+#define WIFI_HOME   (0)
 
 #define AP_PASS      "DiaboloSticks"
 #define MAX_STA_CONN       4
@@ -57,7 +57,7 @@
 
 #define LEFT_STICK_IP "192.168.4.1"
 #define RIGHT_STICK_IP "192.168.5.1"
-#define LAP_IP "192.168.201.174"
+#define LAP_IP "192.168.201.232"
 #define PORT 3333
 
 //This defines changes depending on upper defines

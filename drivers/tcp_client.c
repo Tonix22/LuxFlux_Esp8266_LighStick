@@ -155,16 +155,21 @@ static void tcp_client_task(void *pvParameters)
         ESP_LOGI(TAG, "BUFFER: %s",rx_buffer );
         
         int tries = 0;
-        while(strcmp (rx_buffer, "READY TO SYNC") != 0 && tries < MAX_TRIES){
-            send_msg("NACK\n");
-            len = recv_msg(rx_buffer,sizeof(rx_buffer));
-            if (len > 0) {
-                memset(rx_buffer+(len-2),0,3);
-                ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
-                ESP_LOGI(TAG, "%s", rx_buffer);
+        if(strcmp (rx_buffer, "READY TO SYNC")){
+
+            while(strcmp (rx_buffer, "READY TO SYNC") != 0 && tries < MAX_TRIES){
+                send_msg("NACK\n");
+                len = recv_msg(rx_buffer,sizeof(rx_buffer));
+                if (len > 0) {
+                    memset(rx_buffer+(len-2),0,3);
+                    ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
+                    ESP_LOGI(TAG, "%s", rx_buffer);
+                }
+                tries++;
+                //printf("Try (%i)\r\n",tries);
             }
-            tries++;
-            //printf("Try (%i)\r\n",tries);
+        }else{
+            send_msg("ACK\n");
         }
 
         // =============================================================================
@@ -205,15 +210,15 @@ static void tcp_client_task(void *pvParameters)
             }
                close_file();
 
-            vTaskDelay(2000 / portTICK_PERIOD_MS);
+            vTaskDelay(500 / portTICK_PERIOD_MS);
         }
 
 
-        if (sock != -1) {
-            ESP_LOGE(TAG, "Shutting down socket and restarting...");
-            shutdown(sock, 0);
-            close(sock);
-        }
+    
+        ESP_LOGE(TAG, "Shutting down socket and restarting...");
+        shutdown(sock, 0);
+        close(sock);
+        
         esp_restart();
     }
     vTaskDelete(NULL);

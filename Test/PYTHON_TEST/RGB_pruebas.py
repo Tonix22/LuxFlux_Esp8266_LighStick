@@ -1,10 +1,10 @@
 import numpy as np
 
-time = "50" #50miliseconds
-frames = 300
+time = "30" #miliseconds
+frames = 500
 
-min_val = 370
-max_val = 690
+min_val = 400
+max_val = 800
 delta   = int((max_val-min_val)/3)
 
 w = 0
@@ -15,8 +15,8 @@ elif w < min_val:
 	w = min_val
 
 f = lambda wv,a,b: 256*np.exp(-((2*wv-(a+b))/(b-a))**2)
-
-pruebas = np.linspace(min_val,max_val,frames)
+#f = lambda wv,a,b: 256*np.exp(-((2*wv-(a+b))/(b-a))**2)
+pruebas = np.linspace(min_val-75,max_val+75,frames)
 
 f_rbg = open("../color_patern.txt", "w")
 
