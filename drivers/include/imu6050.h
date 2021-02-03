@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include "FreeRTOS_wrapper.h"
+#include "driver/i2c.h"
 
 // =============================================================================
 // EVENT GROUPS BITS DEFINES
@@ -101,13 +102,6 @@ typedef struct//RAW ACCELERATION DATA
     int32_t Gbz;
 }MeasureBits;
 
-typedef struct//RAW DATA
-{
-    float Abx;
-    float Aby;
-    float Abz;
-}MeasureAcel;
-
 // =============================================================================
 // FUNCTION PROTOTYPES
 // =============================================================================
@@ -118,5 +112,6 @@ void imu_task(void *arg);
 void imu_init(void);
 int calibrate_sensor(int sensor_num);
 void Position(int32_t Ab);
+esp_err_t i2c_example_master_mpu6050_read(i2c_port_t i2c_num, uint8_t reg_address, uint8_t *data, size_t data_len);
 
 #endif

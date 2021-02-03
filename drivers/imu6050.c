@@ -19,7 +19,6 @@
 #include "esp_system.h"
 #include "esp_err.h"
 
-#include "driver/i2c.h"
 #include "IO_driver.h"
 #include "Light_effects.h"
 #include "Menu.h"
@@ -41,26 +40,10 @@ IMU_msgID       imu_cntrl;
 // =============================================================================
 EventGroupHandle_t calib_flags;
 EventBits_t calib_status;
-
-// =============================================================================
-// ECUATION RELATED
-// =============================================================================
-uint32_t Pos_vector = 0;
-int i = 0;
-float sampling_time = 0.04; //40 miliseconds
-float A = 0, V = 0, Vf = 0, S = 0, G = 0, theta = 0;
-
-
 // =============================================================================
 // STRUCTS AND POINTERS
 // =============================================================================
-MeasureBits RAW;
 MeasureBits Offset;
-MeasureAcel Vel;
-MeasureAcel Pos;
-float *Vo = &(Vel.Abx);
-float *So = &(Pos.Abx);
-int32_t* RAWptr    = &RAW.Abx;
 int32_t* Offsetptr = &Offset.Abx;
 // =============================================================================
 // DEBUG
@@ -169,7 +152,7 @@ static esp_err_t i2c_example_master_mpu6050_write(i2c_port_t i2c_num, uint8_t re
  *     - ESP_ERR_INVALID_STATE I2C driver not installed or not in master mode.
  *     - ESP_ERR_TIMEOUT Operation timeout because the bus is busy.
  */
-static esp_err_t i2c_example_master_mpu6050_read(i2c_port_t i2c_num, uint8_t reg_address, uint8_t *data, size_t data_len)
+esp_err_t i2c_example_master_mpu6050_read(i2c_port_t i2c_num, uint8_t reg_address, uint8_t *data, size_t data_len)
 {
     int ret;
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
@@ -439,49 +422,4 @@ int32_t imu_avg(int32_t data)
     i++;
     return Pos_vector;
 }
-
-void Position(int32_t Ab)
-{
-
-    //Ab -= Offsetptr;
-    A = ((float)Ab) / 16384; //valor de la hoja de datos LBS/g para obtener gravedades
-    printf("div: %f  \r\n", A);
-    A *= -9.81; //Gravedad 
-    printf("acel: %f en m/s^2 \r\n", A);
-    V = A*sampling_time; //a(t) = (vf - vo)/t
-    V = V + *Vo;
-    printf("Vel: %f en m/s \r\n", V);
-    S = V*sampling_time;  //v(t) = (sf- so)/t
-    S = S + *So;
-    printf("Pos: %f en m \r\n", S);
-    *Vo = V;//
-    *So = S;
-
-    if(Vo == &Vel.Abz)
-    {
-        Vo = &Vel.Abx;
-        So = &Pos.Abx;
-    }
-    else
-    {
-        Vo++;
-        So++;
-    }
-    
-}
-
-void Angle(int32_t Gb)
-{
-    //Gb -= Offsetptr;
-    if(theta > 360)
-    {
-        theta = 0;
-    }
-    G = ((float)Gb)/16.4;
-    theta = theta + G*sampling_time;
-    printf("Gyro: %f en grados/s \r\n", G);
-    printf("Ángulo final: %f en grados \r\n", theta);
-}
-
-
 

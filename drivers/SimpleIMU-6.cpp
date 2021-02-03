@@ -8,6 +8,8 @@
 #include <Math3D.h>
 #include <stdio.h>
 
+#include "SimpleIMU_6.h"
+
 #define _DEGREES(x) (57.29578 * x)
 
 Quat AttitudeEstimateQuat;
@@ -21,6 +23,11 @@ Quat incrementalRotation;
 Vec3 YPR;
 IMUMath calc;
 unsigned long samplePeriod;
+// =============================================================================
+// RAW DATA READ
+// =============================================================================
+IMU_Sensor MPU;
+
 /* 
 1. Join i2c bus
 2. set I2C speed to 400k
@@ -33,9 +40,10 @@ void IMU_READ() // Start Main Loop
 
 	//if(RateLoopTimer.check())  // check if it is time for next sensor sample, 400Hz
 	{
-		
-		//GyroVec    = Vector(MPU.gX, MPU.gY, MPU.gZ);	// move gyro data to vector structure
-		//Accel_Body = Vector(MPU.aX, MPU.aY, MPU.aZ);	// move accel data to vector structure
+
+		MPU.retrieve();
+		GyroVec.x = MPU.Gx;	 GyroVec.y    =  MPU.Gy; GyroVec.z    =  MPU.Gz; // move gyro data to vector structure
+		Accel_Body.x=MPU.Ax; Accel_Body.x =  MPU.Ay; Accel_Body.z =  MPU.Az; // move accel data to vector structure
 
 		Accel_World = calc.Rotate(AttitudeEstimateQuat, Accel_Body); // rotate accel from body frame to world frame
 
@@ -66,3 +74,4 @@ void IMU_READ() // Start Main Loop
 	}
 	
 } // Main Loop End
+
