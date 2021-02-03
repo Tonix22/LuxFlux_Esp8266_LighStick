@@ -60,7 +60,7 @@ MeasureAcel Vel;
 MeasureAcel Pos;
 float *Vo = &(Vel.Abx);
 float *So = &(Pos.Abx);
-int32_t* RAWptr = &RAW.Abx;
+int32_t* RAWptr    = &RAW.Abx;
 int32_t* Offsetptr = &Offset.Abx;
 // =============================================================================
 // DEBUG
@@ -284,7 +284,6 @@ void imu_task(void *arg)
 void imu_calib_light(void)
 {
     int calibration_status = imu_ok;
-    imu_to_led_msg         = CALIBRATION;
 
     printf("IMU calibration start: \r\n");
 
@@ -345,34 +344,34 @@ void imu_calib_light(void)
  * */
 int calibrate_sensor(int sensor_num)
 {
-    uint8_t who_am_i; //IMU identity and bit counter
-    uint8_t sensor_data[14]; // array to save all sensors measurements
-    uint8_t sensor_idx     = (sensor_num*2);
-    uint8_t sensor_address = ACCEL_XOUT_H + sensor_idx;
+    uint8_t who_am_i = 0; //IMU identity and bit counter
+    uint8_t sensor_data[2] = {0,0}; // array to save all sensors measurements
+    uint8_t sensor_address = ACCEL_XOUT_H + (sensor_num << 1);
+    int16_t data_16bit     = 0;
     int status = 0; //auxiliar variable
 
-    who_am_i = 0;
     i2c_example_master_mpu6050_read(I2C_EXAMPLE_MASTER_NUM, WHO_AM_I, &who_am_i, 1);
     //printf("who AM I: %x \r\n",who_am_i);
     //check if the conection is correct
     if (0x68 == who_am_i) 
     {
         xEventGroupSetBits(calib_flags, INPROGRESS_CALIB);
-
-        memset(sensor_data, 0, 14);
         for(int cnt = 0; cnt < CALIB_MAX; cnt++)
         {
+            imu_to_led_msg = CALIBRATION;
+            vTaskDelay(20 / portTICK_RATE_MS);
+            
             if(!(xQueueSend(Light_event, &imu_to_led_msg, 0)))
             {
                 printf(" message failed 1 \r\n");
             }
             else
             {
-                status = i2c_example_master_mpu6050_read(I2C_EXAMPLE_MASTER_NUM, sensor_address, &sensor_data[sensor_idx], 2);
+                status = i2c_example_master_mpu6050_read(I2C_EXAMPLE_MASTER_NUM, sensor_address, &sensor_data[0], 2);
                 if(status == ESP_OK)
                 {
-                    *RAWptr = (int16_t)((sensor_data[sensor_idx] << 8) | sensor_data[sensor_idx+1]);
-                    *Offsetptr = imu_avg((*RAWptr)*1000);
+                    data_16bit = (int16_t)((sensor_data[0] << 8) | sensor_data[1]);
+                    *Offsetptr = imu_avg((data_16bit)*1000);
                 }
                 else
                 {
@@ -380,7 +379,7 @@ int calibrate_sensor(int sensor_num)
                     return imu_err;
                 }
             }
-            xQueueReceive(imu_light_queue, &imu_to_led_msg, portMAX_DELAY);
+            xQueueReceive(imu_light_queue, &imu_to_led_msg, portMAX_DELAY);//IMU_ACK light end
 
             calib_status = xEventGroupGetBits(calib_flags);
 
@@ -390,22 +389,18 @@ int calibrate_sensor(int sensor_num)
                 xEventGroupSetBits(calib_flags,TERMINATED);
                 return imu_abort;
             }
-
-            imu_to_led_msg = CALIBRATION;
-            vTaskDelay(20 / portTICK_RATE_MS);
         }
         (*Offsetptr)/=1000;
         printf("%s %d \r\n", sensor_log[sensor_num],*Offsetptr);
+        
         imu_avg(0); //RESET AVG
 
-        if(RAWptr != &RAW.Gbz)
+        if(Offsetptr != &Offset.Gbz)
         {
-            RAWptr++;
             Offsetptr++;
         }
         else
         {
-            RAWptr = &RAW.Abx;
             Offsetptr = &Offset.Abx;
         }
     }
