@@ -9,6 +9,7 @@
 #include <stdio.h>
 
 #include "SimpleIMU_6.h"
+#include "driver/hw_timer.h"
 
 #define _DEGREES(x) (57.29578 * x)
 
@@ -22,7 +23,16 @@ Vec3 correction_Body;
 Quat incrementalRotation;
 Vec3 YPR;
 IMUMath calc;
-unsigned long samplePeriod;
+
+// =============================================================================
+// TIMING
+// =============================================================================
+int sampleRate = 400;
+int _GyroClk   = 8000;
+int _sampleRateDiv = (_GyroClk / sampleRate) - 1;
+unsigned long samplePeriod = ((_sampleRateDiv + 1) * 1000000UL) / _GyroClk; // 2500
+int dbg_cnt_print = 0;
+
 // =============================================================================
 // RAW DATA READ
 // =============================================================================
@@ -35,43 +45,50 @@ IMU_Sensor MPU;
 4. Generate and store gyro bias offsets
 */
 
-void IMU_READ() // Start Main Loop
+void IMU_READ(void *arg)// Start Main Loop
 {
 
-	//if(RateLoopTimer.check())  // check if it is time for next sensor sample, 400Hz
+	MPU.retrieve();
+	GyroVec.x = MPU.Gx;	 GyroVec.y    =  MPU.Gy; GyroVec.z    =  MPU.Gz; // move gyro data to vector structure
+	Accel_Body.x=MPU.Ax; Accel_Body.x =  MPU.Ay; Accel_Body.z =  MPU.Az; // move accel data to vector structure
+
+	Accel_World = calc.Rotate(AttitudeEstimateQuat, Accel_Body); // rotate accel from body frame to world frame
+
+	correction_World = calc.CrossProd(Accel_World, VERTICAL); // cross product to determine error
+
+	correction_Body = calc.Rotate(correction_World, AttitudeEstimateQuat); // rotate correction vector to body frame
+
+	GyroVec = calc.Sum(GyroVec, correction_Body);  // add correction vector to gyro data
+
+	incrementalRotation = calc.Quaternion(GyroVec, samplePeriod);  // create incremental rotation quat
+
+	AttitudeEstimateQuat = calc.Mul(incrementalRotation, AttitudeEstimateQuat);  // quaternion integration (rotation composting through multiplication)
+
+
+
+	if(dbg_cnt_print == sampleRate)	
 	{
-
-		MPU.retrieve();
-		GyroVec.x = MPU.Gx;	 GyroVec.y    =  MPU.Gy; GyroVec.z    =  MPU.Gz; // move gyro data to vector structure
-		Accel_Body.x=MPU.Ax; Accel_Body.x =  MPU.Ay; Accel_Body.z =  MPU.Az; // move accel data to vector structure
-
-		Accel_World = calc.Rotate(AttitudeEstimateQuat, Accel_Body); // rotate accel from body frame to world frame
-
-		correction_World = calc.CrossProd(Accel_World, VERTICAL); // cross product to determine error
-
-		correction_Body = calc.Rotate(correction_World, AttitudeEstimateQuat); // rotate correction vector to body frame
-
-		GyroVec = calc.Sum(GyroVec, correction_Body);  // add correction vector to gyro data
-
-		incrementalRotation = calc.Quaternion(GyroVec, samplePeriod);  // create incremental rotation quat
-
-		AttitudeEstimateQuat = calc.Mul(incrementalRotation, AttitudeEstimateQuat);  // quaternion integration (rotation composting through multiplication)
-
-	}
-	
-	//else if(MaintenanceLoop.check())	
-	{
+		dbg_cnt_print = 0;
 		// only display data 2x per second
 		YPR = calc.YawPitchRoll(AttitudeEstimateQuat);
 		printf("Yaw:  %.2f", _DEGREES(-YPR.x));   
 		printf("Pitch: %.2f", _DEGREES(-YPR.y)); 
 		printf("Roll: %.2f", _DEGREES(-YPR.z));
 
-
 		//display(AttitudeEstimateQuat);
 		//display(GyroVec);
 		//display(AccelVec);
 	}
-	
+	dbg_cnt_print++;
+	hw_timer_alarm_us(samplePeriod, true);
+
 } // Main Loop End
 
+
+//POLL each 3 ms
+void IMU_timer_call()
+{
+	/*init hw timer*/
+    hw_timer_init(IMU_READ, NULL);
+	hw_timer_alarm_us(samplePeriod,true);
+}

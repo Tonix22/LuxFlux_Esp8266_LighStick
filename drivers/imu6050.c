@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+
 #include "FreeRTOS_wrapper.h"
 
 #include "esp_log.h"
@@ -23,6 +24,7 @@
 #include "Light_effects.h"
 #include "Menu.h"
 #include "imu6050.h"
+#include "SimpleIMU_6.h"
 
 // =============================================================================
 // QUEUES
@@ -242,6 +244,7 @@ void imu_task(void *arg)
                 if((calib_status & SUCESS_CALIB))
                 {
                     printf("here draw a circule\r\n");
+                    IMU_timer_call();
                 }
                 break;
             case IMU_LINEAR_DRAW:

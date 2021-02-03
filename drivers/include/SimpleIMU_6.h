@@ -1,18 +1,27 @@
 #ifndef SimpleIMU_6_H
 #define SimpleIMU_6_H
 
-#ifdef __cplusplus
-extern "C" {
 
-#endif
+
+#ifdef __cplusplus
+    
+extern "C" {
+    #endif
+
+    void IMU_timer_call();
+
     #ifdef __cplusplus
+
     #include "imu6050.h"
 
     #define ACCEL_BASE	2048.0f		// LSB per g   @ +/- 16g
     #define GYRO_BASE   16.375f		// LSB per dps @ +/- 2000 deg/s
     #define DEG_TO_RAD	(3.141592654f / 180.0f)
 
+    
+
     extern MeasureBits Offset;
+    
 
     class IMU_Sensor
     {
@@ -50,11 +59,8 @@ extern "C" {
 
         }
     };
-
-    #endif
-
 }
 
-
+#endif
 
 #endif 
