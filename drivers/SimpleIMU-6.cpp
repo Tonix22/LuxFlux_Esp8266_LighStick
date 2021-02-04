@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <iomanip>
 #include <iostream>
+#include <stdlib.h>
 #include "SimpleIMU_6.h"
 #include "driver/hw_timer.h"
 
@@ -30,7 +31,7 @@ EventGroupHandle_t MPU_stat;
 // =============================================================================
 // TIMING
 // =============================================================================
-int sampleRate = 20;
+int sampleRate = 400;
 int _GyroClk   = 8000;
 int _sampleRateDiv = (_GyroClk / sampleRate) - 1;
 unsigned long samplePeriod = ((_sampleRateDiv + 1) * 1000000UL) / _GyroClk; // 2500
@@ -50,9 +51,8 @@ IMU_Sensor MPU;
 
 void IMU_READ(void *arg)// Start Main Loop
 {
-	//taskDISABLE_INTERRUPTS();
+	taskDISABLE_INTERRUPTS();
 	MPU.retrieve();
-
 
 	GyroVec.x    = MPU.Gx;	 
 	GyroVec.y    = MPU.Gy; 
@@ -69,20 +69,21 @@ void IMU_READ(void *arg)// Start Main Loop
 
 	GyroVec = calc.Sum(GyroVec, correction_Body);  // add correction vector to gyro data
 
-	incrementalRotation = calc.Quaternion(GyroVec, samplePeriod);  // create incremental rotation quat
+	incrementalRotation = calc.Quaternion(GyroVec, samplePeriod+1800);  // create incremental rotation quat
 
 	AttitudeEstimateQuat = calc.Mul(incrementalRotation, AttitudeEstimateQuat);  // quaternion integration (rotation composting through multiplication)
 
-	if(dbg_cnt_print == sampleRate)	
+	if(dbg_cnt_print == (sampleRate))	
 	{
 		dbg_cnt_print = 0;
-		//xEventGroupSetBits(MPU_stat,END_READ);
+
+		xEventGroupSetBits(MPU_stat,END_READ);
 	}else
 	{
 		dbg_cnt_print++;
-		//hw_timer_alarm_us(samplePeriod, true);
+		hw_timer_alarm_us(samplePeriod, true);
 	}
-	//taskENABLE_INTERRUPTS(); // enable RTOS systic ISR
+	taskENABLE_INTERRUPTS(); // enable RTOS systic ISR
 
 } // Main Loop End
 
@@ -92,25 +93,29 @@ void IMU_timer_call()
 {
 
 	/*init hw timer*/
-    //hw_timer_init(IMU_READ, NULL);
+    hw_timer_init(IMU_READ, NULL);
 	MPU_stat = xEventGroupCreate();
+	EventBits_t wait_buffer;
 	while(1)
 	{
-		//hw_timer_alarm_us(samplePeriod,true);
+		hw_timer_alarm_us(samplePeriod,true);
+		wait_buffer = xEventGroupWaitBits(MPU_stat,
+		END_READ,
+		pdFALSE,
+		pdFALSE,
+		portMAX_DELAY); // wait until seq is finished
+		
+		xEventGroupClearBits(MPU_stat,END_READ);
 
-		//EventBits_t wait_buffer = xEventGroupWaitBits(MPU_stat,
-		//END_READ,
-		//pdFALSE,
-		//pdFALSE,
-		//portMAX_DELAY); // wait until seq is finished
-		//
-		//xEventGroupClearBits(MPU_stat,END_READ);
-		IMU_READ(NULL);
-		vTaskDelay(5000 / portTICK_RATE_MS);
 		YPR = calc.YawPitchRoll(AttitudeEstimateQuat);
-		//printf("Yaw:  %f\r\n", _DEGREES(-YPR.x));   
-		//printf("Pitch: %f\r\n", _DEGREES(-YPR.y)); 
-		//printf("Roll: %f\r\n", _DEGREES(-YPR.z));
+		int YAW   = (int)(_DEGREES(-YPR.x)*100);
+		int Pitch = (int)(_DEGREES(-YPR.y)*100);
+		int Roll  = (int)(_DEGREES(-YPR.y)*100);
+		printf("Yaw:  %d.%d, ", YAW/100,    abs(YAW%100));   
+		printf("Pitch: %d.%d, ", Pitch/100, abs(Pitch%100)); 
+		printf("Roll:  %d.%d \r\n", Roll/100, abs(Roll%100));
+		
+		//printf("****\r\n");
 	}
 	vEventGroupDelete(MPU_stat);
 

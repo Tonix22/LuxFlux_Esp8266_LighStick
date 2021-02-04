@@ -195,9 +195,9 @@ static esp_err_t i2c_example_master_mpu6050_init(i2c_port_t i2c_num)
         ESP_ERROR_CHECK(i2c_example_master_mpu6050_write(i2c_num, SMPLRT_DIV, &cmd_data, 1));
         cmd_data = 0x06;    // Set the Low Pass Filter to 5Hz bandwidth
         ESP_ERROR_CHECK(i2c_example_master_mpu6050_write(i2c_num, CONFIG, &cmd_data, 1));
-        cmd_data = 0x18;    // Set the GYRO range to ± 2000 °/s 
+        cmd_data = 0x03 << 3;     // Set the GYRO range to ± 2000 °/s 
         ESP_ERROR_CHECK(i2c_example_master_mpu6050_write(i2c_num, GYRO_CONFIG, &cmd_data, 1));
-        cmd_data = 0x03;    // Set the ACCEL range to ± 16g 
+        cmd_data = 0x03 << 3;    // Set the ACCEL range to ± 16g 
         ESP_ERROR_CHECK(i2c_example_master_mpu6050_write(i2c_num, ACCEL_CONFIG, &cmd_data, 1));
         xEventGroupSetBits(calib_flags, IMU_HAS_CONECTION);
     }
