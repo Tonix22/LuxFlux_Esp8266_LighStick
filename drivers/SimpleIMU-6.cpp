@@ -52,14 +52,7 @@ void IMU_READ(void *arg)// Start Main Loop
 {
 	//taskDISABLE_INTERRUPTS();
 	MPU.retrieve();
-	printf("*****\r\n");
-	printf("MPU.Ax: %d\r\n",(int)(MPU.Ax));
-	printf("MPU.Ay: %d\r\n",(int)(MPU.Ay));
-	printf("MPU.Az: %d\r\n",(int)(MPU.Az));
-	printf("MPU.Gx: %d\r\n",(int)(MPU.Gx));
-	printf("MPU.Gy: %d\r\n",(int)(MPU.Gy));
-	printf("MPU.Gz: %d\r\n",(int)(MPU.Gz));
-	printf("*****\r\n");
+
 
 	GyroVec.x    = MPU.Gx;	 
 	GyroVec.y    = MPU.Gy; 

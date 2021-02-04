@@ -340,7 +340,6 @@ int calibrate_sensor(int sensor_num)
     //printf("who AM I: %x \r\n",who_am_i);
     //check if the conection is correct
     //printf("sensor addres: %X\r\n",sensor_address);
-    printf("%s********\r\n", sensor_log[sensor_num]);
     if (0x68 == who_am_i) 
     {
         xEventGroupSetBits(calib_flags, INPROGRESS_CALIB);
@@ -359,7 +358,6 @@ int calibrate_sensor(int sensor_num)
                 if(status == ESP_OK)
                 {
                     data_16bit = (int16_t)((sensor_data[0] << 8) | sensor_data[1]);
-                    printf("%d\r\n",data_16bit);
                     if(cnt == 0)
                     {
                         average = data_16bit*1000;
