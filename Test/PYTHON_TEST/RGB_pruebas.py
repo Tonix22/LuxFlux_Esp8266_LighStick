@@ -1,7 +1,7 @@
 import numpy as np
 
 time = "30" #miliseconds
-frames = 500
+frames = 36
 
 min_val = 400
 max_val = 800

@@ -211,14 +211,22 @@ class Riht_Light : public FeatureBehaviour
 class Circular_Light: public FeatureBehaviour
 {
     public:
-    Circular_Light(feature_t mode)
+    EventGroupHandle_t hold;
+    Circular_Light(feature_t mode, EventGroupHandle_t& menu_stat)
     {
+        Set_Frames_buffer(36);
         check_file(mode);
+        this->hold = menu_stat;
     }
     void run_feature_read() //TODO
     {
         Light_MessageID imu_to_led_msg = CIRC_LOAD;
         xQueueSend(Light_event, &imu_to_led_msg, 0);
+        EventBits_t kill = xEventGroupWaitBits(this->hold,TASKDEATH,
+            pdTRUE,// Clear Flag
+            pdFALSE,
+            portMAX_DELAY); // wait until IDLE Task is death
+            
     }
 };
 

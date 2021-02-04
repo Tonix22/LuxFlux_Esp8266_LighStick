@@ -122,7 +122,7 @@ void Generate_Circular_Angles( std::list<Frame>& frames)
 		e_sec +=ratio;
 		if(e_sec > 180)
 		{
-			e_sec-=180;
+			e_sec-=360;
 		}
 		Angle_by_color.emplace_back(b_sec,e_sec, &(*seq_it));
 		b_sec = e_sec;
@@ -170,6 +170,8 @@ void Evalutate_color_pos()
 	int YAW   ;
     int Pitch ;
     int Roll  ;
+	bool paint = false;
+	static bool first_time = true;
 	YPR = calc.YawPitchRoll(AttitudeEstimateQuat);
 	YAW   = (int)(_DEGREES(-YPR.x)*100);
 	Pitch = (int)(_DEGREES(-YPR.y)*100);
@@ -178,6 +180,7 @@ void Evalutate_color_pos()
 
 	if(it_color->end < YAW )
 	{
+		paint = true;
 		it_color++;
 		if(it_color == Angle_by_color.end())
 		{
@@ -186,19 +189,25 @@ void Evalutate_color_pos()
 	}
 	else if(it_color->begin > YAW)
 	{
+		paint = true;
 		if(it_color == Angle_by_color.begin())
 		{
 			it_color = Angle_by_color.end();
 		}
 		it_color--;
 	}
-	for(auto& group: it_color->color->group)
-    {
-        for(int i = 0; i < group.pixels; i++)
-        {
-            LedStick->Paint_LED(group.color);
-        }
-    }
+	if(paint == true || first_time == true)
+	{
+		first_time = false;
+		for(auto& group: it_color->color->group)
+		{
+			for(int i = 0; i < group.pixels; i++)
+			{
+				LedStick->Paint_LED(group.color);
+			}
+		}
+	}
+
 	//printf("Yaw:  %d.%d, ", YAW/100,    abs(YAW%100));   
 	//printf("Pitch: %d.%d, ", Pitch/100, abs(Pitch%100)); 
 	//printf("Roll:  %d.%d \r\n", Roll/100, abs(Roll%100));

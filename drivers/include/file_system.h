@@ -64,4 +64,5 @@ void close_file();
 //TESTING
 void write_to_idle();
 void write_to_rith();
+void write_to_circ();
 #endif
