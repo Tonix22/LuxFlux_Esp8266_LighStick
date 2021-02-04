@@ -39,23 +39,22 @@ extern "C" {
 
         void retrieve()
         {
-
             uint8_t buffer[14];
-        
+            MeasureBits data;
             i2c_example_master_mpu6050_read(I2C_EXAMPLE_MASTER_NUM, ACCEL_XOUT_H, &buffer[0], 14);
-            Ax = (((int16_t)buffer[0]) << 8) | buffer[1];
-            Ay = (((int16_t)buffer[2]) << 8) | buffer[3];
-            Az = (((int16_t)buffer[4]) << 8) | buffer[5];
-            Gx = (((int16_t)buffer[8]) << 8) | buffer[9];
-            Gy = (((int16_t)buffer[10]) << 8) | buffer[11];
-            Gz = (((int16_t)buffer[12]) << 8) | buffer[13];
+            data.Abx = (((buffer[0]) << 8) | buffer[1]);
+            data.Aby = (((buffer[2]) << 8) | buffer[3]);
+            data.Abz = (((buffer[4]) << 8) | buffer[5]);
+            data.Gbx = (((buffer[8]) << 8) | buffer[9]);
+            data.Gby = (((buffer[10]) << 8) | buffer[11]);
+            data.Gbz = (((buffer[12]) << 8) | buffer[13]);
 
-            Ax = (Ax*-Offset.Abx)*accelToG;
-            Ay = (Ay*-Offset.Aby)*accelToG;
-            Az = (Az*-Offset.Abz)*accelToG;
-            Gx = (Gx-Offset.Gbx)*gyroToRad;
-            Gy = (Gy-Offset.Gby)*gyroToRad;
-            Gz = (Gz-Offset.Gbz)*gyroToRad;
+            Ax = (float)(data.Abx);
+            Ay = (float)(data.Aby);
+            Az = (float)(data.Abz);
+            Gx = (float)(data.Gbx);
+            Gy = (float)(data.Gby);
+            Gz = (float)(data.Gbz);
 
         }
     };

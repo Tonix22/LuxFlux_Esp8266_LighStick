@@ -7,7 +7,8 @@
 
 #include <Math3D.h>
 #include <stdio.h>
-
+#include <iomanip>
+#include <iostream>
 #include "SimpleIMU_6.h"
 #include "driver/hw_timer.h"
 
@@ -24,10 +25,12 @@ Quat incrementalRotation;
 Vec3 YPR;
 IMUMath calc;
 
+EventGroupHandle_t MPU_stat;
+#define END_READ BIT0
 // =============================================================================
 // TIMING
 // =============================================================================
-int sampleRate = 400;
+int sampleRate = 20;
 int _GyroClk   = 8000;
 int _sampleRateDiv = (_GyroClk / sampleRate) - 1;
 unsigned long samplePeriod = ((_sampleRateDiv + 1) * 1000000UL) / _GyroClk; // 2500
@@ -47,10 +50,23 @@ IMU_Sensor MPU;
 
 void IMU_READ(void *arg)// Start Main Loop
 {
-
+	//taskDISABLE_INTERRUPTS();
 	MPU.retrieve();
-	GyroVec.x = MPU.Gx;	 GyroVec.y    =  MPU.Gy; GyroVec.z    =  MPU.Gz; // move gyro data to vector structure
-	Accel_Body.x=MPU.Ax; Accel_Body.x =  MPU.Ay; Accel_Body.z =  MPU.Az; // move accel data to vector structure
+	printf("*****\r\n");
+	printf("MPU.Ax: %d\r\n",(int)(MPU.Ax));
+	printf("MPU.Ay: %d\r\n",(int)(MPU.Ay));
+	printf("MPU.Az: %d\r\n",(int)(MPU.Az));
+	printf("MPU.Gx: %d\r\n",(int)(MPU.Gx));
+	printf("MPU.Gy: %d\r\n",(int)(MPU.Gy));
+	printf("MPU.Gz: %d\r\n",(int)(MPU.Gz));
+	printf("*****\r\n");
+
+	GyroVec.x    = MPU.Gx;	 
+	GyroVec.y    = MPU.Gy; 
+	GyroVec.z    = MPU.Gz; // move gyro data to vector structure
+	Accel_Body.x = MPU.Ax; 
+	Accel_Body.y = MPU.Ay; 
+	Accel_Body.z = MPU.Az; // move accel data to vector structure
 
 	Accel_World = calc.Rotate(AttitudeEstimateQuat, Accel_Body); // rotate accel from body frame to world frame
 
@@ -64,23 +80,16 @@ void IMU_READ(void *arg)// Start Main Loop
 
 	AttitudeEstimateQuat = calc.Mul(incrementalRotation, AttitudeEstimateQuat);  // quaternion integration (rotation composting through multiplication)
 
-
-
 	if(dbg_cnt_print == sampleRate)	
 	{
 		dbg_cnt_print = 0;
-		// only display data 2x per second
-		YPR = calc.YawPitchRoll(AttitudeEstimateQuat);
-		printf("Yaw:  %.2f", _DEGREES(-YPR.x));   
-		printf("Pitch: %.2f", _DEGREES(-YPR.y)); 
-		printf("Roll: %.2f", _DEGREES(-YPR.z));
-
-		//display(AttitudeEstimateQuat);
-		//display(GyroVec);
-		//display(AccelVec);
+		//xEventGroupSetBits(MPU_stat,END_READ);
+	}else
+	{
+		dbg_cnt_print++;
+		//hw_timer_alarm_us(samplePeriod, true);
 	}
-	dbg_cnt_print++;
-	hw_timer_alarm_us(samplePeriod, true);
+	//taskENABLE_INTERRUPTS(); // enable RTOS systic ISR
 
 } // Main Loop End
 
@@ -88,7 +97,28 @@ void IMU_READ(void *arg)// Start Main Loop
 //POLL each 3 ms
 void IMU_timer_call()
 {
+
 	/*init hw timer*/
-    hw_timer_init(IMU_READ, NULL);
-	hw_timer_alarm_us(samplePeriod,true);
+    //hw_timer_init(IMU_READ, NULL);
+	MPU_stat = xEventGroupCreate();
+	while(1)
+	{
+		//hw_timer_alarm_us(samplePeriod,true);
+
+		//EventBits_t wait_buffer = xEventGroupWaitBits(MPU_stat,
+		//END_READ,
+		//pdFALSE,
+		//pdFALSE,
+		//portMAX_DELAY); // wait until seq is finished
+		//
+		//xEventGroupClearBits(MPU_stat,END_READ);
+		IMU_READ(NULL);
+		vTaskDelay(5000 / portTICK_RATE_MS);
+		YPR = calc.YawPitchRoll(AttitudeEstimateQuat);
+		//printf("Yaw:  %f\r\n", _DEGREES(-YPR.x));   
+		//printf("Pitch: %f\r\n", _DEGREES(-YPR.y)); 
+		//printf("Roll: %f\r\n", _DEGREES(-YPR.z));
+	}
+	vEventGroupDelete(MPU_stat);
+
 }
