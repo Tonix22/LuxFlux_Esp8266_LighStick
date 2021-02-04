@@ -197,7 +197,7 @@ static esp_err_t i2c_example_master_mpu6050_init(i2c_port_t i2c_num)
         ESP_ERROR_CHECK(i2c_example_master_mpu6050_write(i2c_num, CONFIG, &cmd_data, 1));
         cmd_data = 0x18;    // Set the GYRO range to ± 2000 °/s 
         ESP_ERROR_CHECK(i2c_example_master_mpu6050_write(i2c_num, GYRO_CONFIG, &cmd_data, 1));
-        cmd_data = 0x01;    // Set the ACCEL range to ± 2g 
+        cmd_data = 0x03;    // Set the ACCEL range to ± 16g 
         ESP_ERROR_CHECK(i2c_example_master_mpu6050_write(i2c_num, ACCEL_CONFIG, &cmd_data, 1));
         xEventGroupSetBits(calib_flags, IMU_HAS_CONECTION);
     }
@@ -332,20 +332,22 @@ int calibrate_sensor(int sensor_num)
 {
     uint8_t who_am_i = 0; //IMU identity and bit counter
     uint8_t sensor_data[2] = {0,0}; // array to save all sensors measurements
-    uint8_t sensor_address = ACCEL_XOUT_H + (sensor_num << 1);
+    uint8_t sensor_address = ACCEL_XOUT_H + (sensor_num * 2);
     int16_t data_16bit     = 0;
     int status = 0; //auxiliar variable
-
+    int32_t average = 0;
     i2c_example_master_mpu6050_read(I2C_EXAMPLE_MASTER_NUM, WHO_AM_I, &who_am_i, 1);
     //printf("who AM I: %x \r\n",who_am_i);
     //check if the conection is correct
+    //printf("sensor addres: %X\r\n",sensor_address);
+    printf("%s********\r\n", sensor_log[sensor_num]);
     if (0x68 == who_am_i) 
     {
         xEventGroupSetBits(calib_flags, INPROGRESS_CALIB);
         for(int cnt = 0; cnt < CALIB_MAX; cnt++)
         {
             imu_to_led_msg = CALIBRATION;
-            vTaskDelay(20 / portTICK_RATE_MS);
+            vTaskDelay(10 / portTICK_RATE_MS);
             
             if(!(xQueueSend(Light_event, &imu_to_led_msg, 0)))
             {
@@ -357,7 +359,15 @@ int calibrate_sensor(int sensor_num)
                 if(status == ESP_OK)
                 {
                     data_16bit = (int16_t)((sensor_data[0] << 8) | sensor_data[1]);
-                    *Offsetptr = imu_avg((data_16bit)*1000);
+                    printf("%d\r\n",data_16bit);
+                    if(cnt == 0)
+                    {
+                        average = data_16bit*1000;
+                    }
+                    else
+                    {
+                        average = (cnt*average + data_16bit*1000)/(cnt+1);
+                    }
                 }
                 else
                 {
@@ -376,10 +386,11 @@ int calibrate_sensor(int sensor_num)
                 return imu_abort;
             }
         }
-        (*Offsetptr)/=1000;
+        average /=1000;
+
+        (*Offsetptr) = average;
         printf("%s %d \r\n", sensor_log[sensor_num],*Offsetptr);
         
-        imu_avg(0); //RESET AVG
 
         if(Offsetptr != &Offset.Gbz)
         {
@@ -398,31 +409,3 @@ int calibrate_sensor(int sensor_num)
 
     return status;
 }
-
-/**
- * @brief average general math function
- * 
- * */
-int32_t imu_avg(int32_t data)
-{ 
-    static int32_t i = 0;
-    static int32_t Pos_vector = 0;
-    if (i == 0)
-    {
-        Pos_vector = data; 
-    }
-    else
-    {
-        Pos_vector = Pos_vector*i;
-        Pos_vector = Pos_vector+data;
-        Pos_vector = Pos_vector/(i+1);
-    }
-    if(i == CALIB_MAX)
-    {
-        i = 0;
-        Pos_vector = 0;
-    }
-    i++;
-    return Pos_vector;
-}
-
