@@ -56,7 +56,7 @@ void sync_action(TimerHandle_t xTimer );
 // =============================================================================
 
 extern EventGroupHandle_t Flash_status;
-
+extern xQueueHandle Light_event;
 // =============================================================================
 // Type definitions
 // =============================================================================
@@ -217,7 +217,8 @@ class Circular_Light: public FeatureBehaviour
     }
     void run_feature_read() //TODO
     {
-
+        Light_MessageID imu_to_led_msg = CIRC_LOAD;
+        xQueueSend(Light_event, &imu_to_led_msg, 0);
     }
 };
 

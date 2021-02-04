@@ -7,21 +7,20 @@
     
 extern "C" {
     #endif
-
     void IMU_timer_call();
 
     #ifdef __cplusplus
-
     #include "imu6050.h"
+    #include "structs.h"
 
     #define ACCEL_BASE	2048.0f		// LSB per g   @ +/- 16g
     #define GYRO_BASE   16.375f		// LSB per dps @ +/- 2000 deg/s
     #define DEG_TO_RAD	(3.141592654f / 180.0f)
 
     
-
     extern MeasureBits Offset;
-    
+    void Evalutate_color_pos();
+    void Generate_Circular_Angles( std::list<Frame>& frames);
 
     class IMU_Sensor
     {
@@ -81,6 +80,17 @@ extern "C" {
 
         }
     };
+
+    typedef struct Radian_Colors
+    {  
+        float begin;
+        float end;
+        Frame* color;
+        Radian_Colors(float b,float e, Frame* color)
+        :begin(b), end(e), color(color){}
+        
+    }CIRCLE_seg;
+
 }
 
 #endif

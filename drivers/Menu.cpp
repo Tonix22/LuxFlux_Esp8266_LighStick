@@ -324,7 +324,7 @@ void circular_subtask(void *arg)
     if(calib_and_cmd(IMU_CIRCULAR_DRAW)) //2
     {
         Circular_Light* circ_proc = new Circular_Light(CIRCULAR_feature);
-        //Process_feature(circ_proc); // 3
+        Process_feature(circ_proc); // 3
     }
     xEventGroupSetBits(Menu_status,TASKDEATH); // 4
     vTaskDelete(NULL);// 5

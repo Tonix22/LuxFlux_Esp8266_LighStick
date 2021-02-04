@@ -30,6 +30,7 @@ extern "C"
         ABORT_CALIBRATION,
         OFF,
         LOAD_EFFECTS,
+        CIRC_LOAD,
     }Light_MessageID;
 
     // =============================================================================
@@ -55,6 +56,7 @@ extern "C"
         #include "IO_driver.h"
         #include "structs.h"
         #include "Menu.h"
+        #include "SimpleIMU_6.h"
         #include <vector>
         #include <list>
         // =============================================================================
