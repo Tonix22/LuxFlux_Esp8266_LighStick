@@ -33,8 +33,11 @@
 #include "file_system.h"
 #include "memory_admin.h"
 
-
+// =============================================================================
+// External variables
+// =============================================================================
  extern char  File_names[MAX_features][MAX_NAME_SIZE];
+
 // =============================================================================
 // Local variables
 // =============================================================================
@@ -43,6 +46,12 @@ static const char *TAG = "example";
 char *payload = "Message from ESP32 ";
 int sock;
 
+/**
+ * @brief Function to send message to server
+ * @param msg message in a string
+ * @return err -> if err == 0 the message has been sent correctly
+ *         err -> if err <  0 an error ocurred while sending the message
+**/
 int send_msg(const char * msg){
     int err = send(sock, msg, strlen(msg), 0);
     if (err < 0) {
@@ -50,6 +59,14 @@ int send_msg(const char * msg){
     }
     return err;
 }
+
+/**
+ * @brief Function to recieve message from client
+ * @param msg message in a string
+ * @param lenght lenght of msg
+ * @return len -> if len == 0 the message has been sent correctly
+ *         len -> if len <  0 an error ocurred while sending the message
+**/
 
 int recv_msg(char* msg, int lenght){
     int len = recv(sock, msg, lenght-1, 0);
@@ -177,8 +194,8 @@ static void tcp_client_task(void *pvParameters)
         // =============================================================================
         
         //RECORRE TODOS LOS ARCHIVOS
-        int i=0;
-        for (; i < MAX_features;i++){
+        int i;
+        for (i=0; i < MAX_features;i++){
             send_msg(File_names[i]);
                     
         // Open file 
