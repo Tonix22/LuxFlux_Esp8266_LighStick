@@ -100,7 +100,7 @@ void sync_func(int*sock){
 	valid_msg = true;
     memset(rx_buffer,0,MAX_SIZE);// flush buffer
     len = recv(*sock, rx_buffer, sizeof(rx_buffer),0);
-    //memset(rx_buffer+(len-2),0,3);
+    
     if (strcmp(rx_buffer,"NACK\n") == 0){
         printf("READY TO SYNC FAILED\r\n");
         return;
