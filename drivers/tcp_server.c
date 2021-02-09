@@ -327,6 +327,7 @@ static void tcp_server_task(void *pvParameters)
         ESP_LOGI(TAG, "Socket accepted");
 
         comunication(&sock);
+        //This line of code will be reached once the communication is over
 
         
         ESP_LOGI(TAG, "Shutting down socket and restarting...");
