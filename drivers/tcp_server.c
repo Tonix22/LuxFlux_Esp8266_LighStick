@@ -324,7 +324,7 @@ static void tcp_server_task(void *pvParameters)
         comunication(&sock);
 
         
-        ESP_LOGE(TAG, "Shutting down socket and restarting...");
+        ESP_LOGI(TAG, "Shutting down socket and restarting...");
         shutdown(sock, 0);
         close(sock);
     
