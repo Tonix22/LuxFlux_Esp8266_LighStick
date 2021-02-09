@@ -39,7 +39,6 @@
 #define SEND_NACK message_response(&sock,"NACK\n")
 #define SEND_ACK message_response(&sock,"ACK\n")
 #define MAX_SIZE 128
-#define PIXELS 8
 
 // =============================================================================
 // External VARIABLES
