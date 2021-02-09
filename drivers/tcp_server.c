@@ -106,8 +106,9 @@ void sync_func(int*sock){
         return;
     }
     printf("From client: %s \r\n", rx_buffer); 
-    int i;
+    
     while (valid_msg){
+        int i;
         for (i=0; i < MAX_features;i++){
             memset(rx_buffer,0,MAX_SIZE);// flush buffer
             recv(*sock, rx_buffer, sizeof(rx_buffer),0);//Receive File Name
