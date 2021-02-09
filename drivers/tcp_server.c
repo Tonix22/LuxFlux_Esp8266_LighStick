@@ -305,6 +305,9 @@ static void tcp_server_task(void *pvParameters)
         }
         ESP_LOGI(TAG, "Socket binded");
 
+        // =============================================================================
+        // 3. Socket Listen
+        // =============================================================================
         err = listen(listen_sock, 1);
         if (err != 0) {
             ESP_LOGE(TAG, "Error occured during listen: errno %d", errno);
@@ -313,7 +316,9 @@ static void tcp_server_task(void *pvParameters)
         ESP_LOGI(TAG, "Socket listening");
 
 
-        
+        // =============================================================================
+        // 4. Socket Accept
+        // =============================================================================
         int sock = accept(listen_sock, (struct sockaddr *)&sourceAddr, &addrLen);
         if (sock < 0) {
             ESP_LOGE(TAG, "Unable to accept connection: errno %d", errno);
