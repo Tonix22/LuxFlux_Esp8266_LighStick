@@ -51,6 +51,7 @@
 // =============================================================================
     static const char *TAG = "SERVER";  
     char rx_buffer [MAX_SIZE];
+    char tempbuff [MAX_SIZE];
     int len = 0;
 
 
@@ -93,7 +94,6 @@ void sync_func(int*sock){
     uint32_t time   = 0;
     char pixels_cnt = 0;
     bool valid_msg  = false;
-    char tempbuff [MAX_SIZE];
     int num_pixels = get_pixels();
     message_response(sock,"READY TO SYNC\n");
 	printf("To client: READY TO SYNC\r\n"); 
