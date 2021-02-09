@@ -91,7 +91,7 @@ bool message_response(int* sock, char* msg){
 
 void sync_func(int*sock){
     Block* chunk    =  malloc(sizeof(Block));
-    uint32_t time   = 0;
+    uint32_t frame_time   = 0;
     char pixels_cnt = 0;
     bool valid_msg  = false;
     int num_pixels = get_pixels();
@@ -127,15 +127,15 @@ void sync_func(int*sock){
                  if (!valid_msg){
                      break;
                  }
-                valid_msg = read_chunk(&time,sizeof(uint32_t),1);
-                sprintf(tempbuff,"%d\n",time);
+                valid_msg = read_chunk(&frame_time,sizeof(uint32_t),1);
+                sprintf(tempbuff,"%d\n",frame_time);
                 strcat(rx_buffer,tempbuff);
                 printf("To client: %s\r\n",rx_buffer);
                 message_response(sock,rx_buffer);
                 memset(rx_buffer,0,MAX_SIZE);// flush buffer
                 recv(*sock, rx_buffer, sizeof(rx_buffer),0);
                 printf("From client: %s \r\n", rx_buffer); 
-                time = 0;
+                frame_time = 0;
                 pixels_cnt = 0;
                 memset(tempbuff,0,MAX_SIZE);// flush buffer
                 memset(rx_buffer,0,MAX_SIZE);// flush buffer
