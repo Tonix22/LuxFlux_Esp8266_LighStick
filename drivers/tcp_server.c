@@ -271,6 +271,8 @@ static void tcp_server_task(void *pvParameters)
     // =============================================================================
     int  addr_family;
     int  ip_protocol;
+    struct sockaddr_in sourceAddr;
+    uint8_t addrLen = sizeof(sourceAddr);
     
 
     while (1) {
@@ -311,9 +313,7 @@ static void tcp_server_task(void *pvParameters)
         ESP_LOGI(TAG, "Socket listening");
 
 
-        struct sockaddr_in sourceAddr;
-
-        uint addrLen = sizeof(sourceAddr);
+        
         int sock = accept(listen_sock, (struct sockaddr *)&sourceAddr, &addrLen);
         if (sock < 0) {
             ESP_LOGE(TAG, "Unable to accept connection: errno %d", errno);
