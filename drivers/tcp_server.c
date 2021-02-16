@@ -54,6 +54,14 @@
     char tempbuff [MAX_SIZE];
     int len = 0;
 
+void filter_clr_cls()
+{
+    char* chr = (strchr(rx_buffer,'\n'));
+    if(chr !=NULL){ *chr = 0;}
+    chr = (strchr(rx_buffer,'\r'));
+    if(chr !=NULL){ *chr = 0;}
+}
+
 
 /**
 * @brief send message function
@@ -95,13 +103,15 @@ void sync_func(int*sock){
     char pixels_cnt = 0;
     bool valid_msg  = false;
     int num_pixels = get_pixels();
+
     message_response(sock,"READY TO SYNC\n");
 	printf("To client: READY TO SYNC\r\n"); 
 	valid_msg = true;
     memset(rx_buffer,0,MAX_SIZE);// flush buffer
-    len = recv(*sock, rx_buffer, sizeof(rx_buffer),0);
-    
-    if (strcmp(rx_buffer,"NACK\n") == 0){
+    len = recv(*sock, rx_buffer, sizeof(rx_buffer),0); // WAIT AN ACK
+    filter_clr_cls();
+
+    if (strcmp(rx_buffer,"NACK") == 0){
         printf("READY TO SYNC FAILED\r\n");
         return;
     }
@@ -112,12 +122,16 @@ void sync_func(int*sock){
         for (i=0; i < MAX_features;i++){
             memset(rx_buffer,0,MAX_SIZE);// flush buffer
             recv(*sock, rx_buffer, sizeof(rx_buffer),0);//Receive File Name
-            printf("From client: %s \r\n", rx_buffer); 
+
+            printf("From client: %s \r\n", rx_buffer);
+
             file_open(READ,File_names[i]);
             memset(rx_buffer,0,MAX_SIZE);// flush buffer
+            
+            // Read data From memory in order to sent data to client, in syncronization 
             while(valid_msg)
             {
-                 while (pixels_cnt < num_pixels  && valid_msg)
+                while (pixels_cnt < num_pixels  && valid_msg)
                 {
                     valid_msg = read_chunk(chunk,sizeof(Block),1);
                     sprintf(tempbuff,"%d(%d,%d,%d),",chunk->pixels, chunk->color.RED, chunk->color.GREEN, chunk->color.BLUE);
@@ -173,12 +187,18 @@ void fota_func(int *sock){
 
 void app_func(int *sock){
     
+    bool valid_name_file = false;
+    bool valid_frame = true;
     message_response(sock, "READY TO WRITE\n");
     memset(rx_buffer,0,MAX_SIZE);// flush buffer
+    
     //Receive ACK from client
     len = recv(*sock, rx_buffer, sizeof(rx_buffer),0);
     printf("From client: %s\r\n",rx_buffer);
-    if (strcmp(rx_buffer,"NACK\n") == 0){
+
+    filter_clr_cls();
+
+    if (strcmp(rx_buffer,"NACK") == 0){
             printf("READY TO WRITE FAILED\r\n");
             return;
     }
@@ -186,42 +206,46 @@ void app_func(int *sock){
     //Receive file name
     len = recv(*sock, rx_buffer, sizeof(rx_buffer),0);
     printf("From client: %s\r\n",rx_buffer);
+    filter_clr_cls();
 
     //TODO TEST 1
     if(check_file_exist(rx_buffer)){
         delete_file(rx_buffer);
-    }else{
-        printf("File no found\r\n");
+    }else{ // check if its a valid name
+        
+        for(uint8_t i=0;i<MAX_features;i++)
+        {
+            if(strcmp(rx_buffer,File_names[i]) == 0)
+            {
+                valid_name_file = true;
+            }
+            if(valid_name_file == false)
+            {
+                printf("invalid name file\r\n");
+                return;
+            }
+        }
+
     }
     file_open(WRITE,rx_buffer);
     
     //Receive chunk 1
     memset(rx_buffer,0,MAX_SIZE);// flush buffer
-    len = recv(*sock, rx_buffer, sizeof(rx_buffer),0);
-    parse_chunk(rx_buffer);
+    recv(*sock, rx_buffer, sizeof(rx_buffer),0);
+    filter_clr_cls();
 
-    //Receive chunk 2
-    memset(rx_buffer,0,MAX_SIZE);// flush buffer
-    len = recv(*sock, rx_buffer, sizeof(rx_buffer),0);
-    parse_chunk(rx_buffer);
+    do
+    {
+        valid_frame  = parse_chunk(rx_buffer);
+        valid_frame &= strcmp(rx_buffer,"EOF") ;
+        recv(*sock, rx_buffer, sizeof(rx_buffer),0);
+        filter_clr_cls();
+    }while(valid_frame);
 
-     //Receive chunk 3
-    memset(rx_buffer,0,MAX_SIZE);// flush buffer
-    len = recv(*sock, rx_buffer, sizeof(rx_buffer),0);
-    parse_chunk(rx_buffer);
 
     close_file();
-
-    //TODO TEST 2 
-    /*
-    if(check_file_exist(rx_buffer)){
-        delete_file(rx_buffer);
-    }
-    */
-
-    
-
 }
+
 
 
 /**
@@ -234,19 +258,18 @@ void comunication(int* sock){
     memset(rx_buffer,0,MAX_SIZE);// flush buffer
     //receives message from client
     len = recv(*sock, rx_buffer, sizeof(rx_buffer),0);
-    printf("From client: %s \r\n", rx_buffer); 
-
-    if(strcmp(rx_buffer,"SYNC\n") == 0){
+    filter_clr_cls();
+    printf("From client: %s \r\n", rx_buffer);
+    if(strcmp(rx_buffer,"SYNC") == 0){
 		sync_func(sock);
 
-	}else if(strcmp(rx_buffer,"FOTA\n") == 0){
+	}else if(strcmp(rx_buffer,"FOTA") == 0){
 		fota_func(sock);
 
-	}else if(strcmp(rx_buffer,"APP\n") == 0){
+	}else if(strcmp(rx_buffer,"APP") == 0){
         app_func(sock);        
     
     }else{
-    
 		message_response(sock,"NACK"); 
 	}
 
