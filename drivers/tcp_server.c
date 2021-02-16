@@ -208,7 +208,6 @@ void app_func(int *sock){
     printf("From client: %s\r\n",rx_buffer);
     filter_clr_cls();
 
-    //TODO TEST 1
     if(check_file_exist(rx_buffer)){
         delete_file(rx_buffer);
     }else{ // check if its a valid name
