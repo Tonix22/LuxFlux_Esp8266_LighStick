@@ -13,17 +13,18 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+
 #include "FreeRTOS_wrapper.h"
 
 #include "esp_log.h"
 #include "esp_system.h"
 #include "esp_err.h"
 
-#include "driver/i2c.h"
 #include "IO_driver.h"
 #include "Light_effects.h"
 #include "Menu.h"
 #include "imu6050.h"
+#include "SimpleIMU_6.h"
 
 // =============================================================================
 // QUEUES
@@ -41,26 +42,10 @@ IMU_msgID       imu_cntrl;
 // =============================================================================
 EventGroupHandle_t calib_flags;
 EventBits_t calib_status;
-
-// =============================================================================
-// ECUATION RELATED
-// =============================================================================
-uint32_t Pos_vector = 0;
-int i = 0;
-float sampling_time = 0.04; //40 miliseconds
-float A = 0, V = 0, Vf = 0, S = 0, G = 0, theta = 0;
-
-
 // =============================================================================
 // STRUCTS AND POINTERS
 // =============================================================================
-MeasureBits RAW;
 MeasureBits Offset;
-MeasureAcel Vel;
-MeasureAcel Pos;
-float *Vo = &(Vel.Abx);
-float *So = &(Pos.Abx);
-int32_t* RAWptr = &RAW.Abx;
 int32_t* Offsetptr = &Offset.Abx;
 // =============================================================================
 // DEBUG
@@ -169,7 +154,7 @@ static esp_err_t i2c_example_master_mpu6050_write(i2c_port_t i2c_num, uint8_t re
  *     - ESP_ERR_INVALID_STATE I2C driver not installed or not in master mode.
  *     - ESP_ERR_TIMEOUT Operation timeout because the bus is busy.
  */
-static esp_err_t i2c_example_master_mpu6050_read(i2c_port_t i2c_num, uint8_t reg_address, uint8_t *data, size_t data_len)
+esp_err_t i2c_example_master_mpu6050_read(i2c_port_t i2c_num, uint8_t reg_address, uint8_t *data, size_t data_len)
 {
     int ret;
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
@@ -210,9 +195,9 @@ static esp_err_t i2c_example_master_mpu6050_init(i2c_port_t i2c_num)
         ESP_ERROR_CHECK(i2c_example_master_mpu6050_write(i2c_num, SMPLRT_DIV, &cmd_data, 1));
         cmd_data = 0x06;    // Set the Low Pass Filter to 5Hz bandwidth
         ESP_ERROR_CHECK(i2c_example_master_mpu6050_write(i2c_num, CONFIG, &cmd_data, 1));
-        cmd_data = 0x18;    // Set the GYRO range to ± 2000 °/s 
+        cmd_data = 0x03 << 3;     // Set the GYRO range to ± 2000 °/s 
         ESP_ERROR_CHECK(i2c_example_master_mpu6050_write(i2c_num, GYRO_CONFIG, &cmd_data, 1));
-        cmd_data = 0x01;    // Set the ACCEL range to ± 2g 
+        cmd_data = 0x03 << 3;    // Set the ACCEL range to ± 16g 
         ESP_ERROR_CHECK(i2c_example_master_mpu6050_write(i2c_num, ACCEL_CONFIG, &cmd_data, 1));
         xEventGroupSetBits(calib_flags, IMU_HAS_CONECTION);
     }
@@ -259,6 +244,7 @@ void imu_task(void *arg)
                 if((calib_status & SUCESS_CALIB))
                 {
                     printf("here draw a circule\r\n");
+                    IMU_timer_call();
                 }
                 break;
             case IMU_LINEAR_DRAW:
@@ -284,7 +270,6 @@ void imu_task(void *arg)
 void imu_calib_light(void)
 {
     int calibration_status = imu_ok;
-    imu_to_led_msg         = CALIBRATION;
 
     printf("IMU calibration start: \r\n");
 
@@ -345,34 +330,42 @@ void imu_calib_light(void)
  * */
 int calibrate_sensor(int sensor_num)
 {
-    uint8_t who_am_i; //IMU identity and bit counter
-    uint8_t sensor_data[14]; // array to save all sensors measurements
-    uint8_t sensor_idx     = (sensor_num*2);
-    uint8_t sensor_address = ACCEL_XOUT_H + sensor_idx;
+    uint8_t who_am_i = 0; //IMU identity and bit counter
+    uint8_t sensor_data[2] = {0,0}; // array to save all sensors measurements
+    uint8_t sensor_address = ACCEL_XOUT_H + (sensor_num * 2);
+    int16_t data_16bit     = 0;
     int status = 0; //auxiliar variable
-
-    who_am_i = 0;
+    int32_t average = 0;
     i2c_example_master_mpu6050_read(I2C_EXAMPLE_MASTER_NUM, WHO_AM_I, &who_am_i, 1);
     //printf("who AM I: %x \r\n",who_am_i);
     //check if the conection is correct
+    //printf("sensor addres: %X\r\n",sensor_address);
     if (0x68 == who_am_i) 
     {
         xEventGroupSetBits(calib_flags, INPROGRESS_CALIB);
-
-        memset(sensor_data, 0, 14);
         for(int cnt = 0; cnt < CALIB_MAX; cnt++)
         {
+            imu_to_led_msg = CALIBRATION;
+            vTaskDelay(10 / portTICK_RATE_MS);
+            
             if(!(xQueueSend(Light_event, &imu_to_led_msg, 0)))
             {
                 printf(" message failed 1 \r\n");
             }
             else
             {
-                status = i2c_example_master_mpu6050_read(I2C_EXAMPLE_MASTER_NUM, sensor_address, &sensor_data[sensor_idx], 2);
+                status = i2c_example_master_mpu6050_read(I2C_EXAMPLE_MASTER_NUM, sensor_address, &sensor_data[0], 2);
                 if(status == ESP_OK)
                 {
-                    *RAWptr = (int16_t)((sensor_data[sensor_idx] << 8) | sensor_data[sensor_idx+1]);
-                    *Offsetptr = imu_avg((*RAWptr)*1000);
+                    data_16bit = (int16_t)((sensor_data[0] << 8) | sensor_data[1]);
+                    if(cnt == 0)
+                    {
+                        average = data_16bit*1000;
+                    }
+                    else
+                    {
+                        average = (cnt*average + data_16bit*1000)/(cnt+1);
+                    }
                 }
                 else
                 {
@@ -380,7 +373,7 @@ int calibrate_sensor(int sensor_num)
                     return imu_err;
                 }
             }
-            xQueueReceive(imu_light_queue, &imu_to_led_msg, portMAX_DELAY);
+            xQueueReceive(imu_light_queue, &imu_to_led_msg, portMAX_DELAY);//IMU_ACK light end
 
             calib_status = xEventGroupGetBits(calib_flags);
 
@@ -390,22 +383,19 @@ int calibrate_sensor(int sensor_num)
                 xEventGroupSetBits(calib_flags,TERMINATED);
                 return imu_abort;
             }
-
-            imu_to_led_msg = CALIBRATION;
-            vTaskDelay(20 / portTICK_RATE_MS);
         }
-        (*Offsetptr)/=1000;
-        printf("%s %d \r\n", sensor_log[sensor_num],*Offsetptr);
-        imu_avg(0); //RESET AVG
+        average /=1000;
 
-        if(RAWptr != &RAW.Gbz)
+        (*Offsetptr) = average;
+        printf("%s %d \r\n", sensor_log[sensor_num],*Offsetptr);
+        
+
+        if(Offsetptr != &Offset.Gbz)
         {
-            RAWptr++;
             Offsetptr++;
         }
         else
         {
-            RAWptr = &RAW.Abx;
             Offsetptr = &Offset.Abx;
         }
     }
@@ -417,76 +407,3 @@ int calibrate_sensor(int sensor_num)
 
     return status;
 }
-
-/**
- * @brief average general math function
- * 
- * */
-int32_t imu_avg(int32_t data)
-{ 
-    static int32_t i = 0;
-    static int32_t Pos_vector = 0;
-    if (i == 0)
-    {
-        Pos_vector = data; 
-    }
-    else
-    {
-        Pos_vector = Pos_vector*i;
-        Pos_vector = Pos_vector+data;
-        Pos_vector = Pos_vector/(i+1);
-    }
-    if(i == CALIB_MAX)
-    {
-        i = 0;
-        Pos_vector = 0;
-    }
-    i++;
-    return Pos_vector;
-}
-
-void Position(int32_t Ab)
-{
-
-    //Ab -= Offsetptr;
-    A = ((float)Ab) / 16384; //valor de la hoja de datos LBS/g para obtener gravedades
-    printf("div: %f  \r\n", A);
-    A *= -9.81; //Gravedad 
-    printf("acel: %f en m/s^2 \r\n", A);
-    V = A*sampling_time; //a(t) = (vf - vo)/t
-    V = V + *Vo;
-    printf("Vel: %f en m/s \r\n", V);
-    S = V*sampling_time;  //v(t) = (sf- so)/t
-    S = S + *So;
-    printf("Pos: %f en m \r\n", S);
-    *Vo = V;//
-    *So = S;
-
-    if(Vo == &Vel.Abz)
-    {
-        Vo = &Vel.Abx;
-        So = &Pos.Abx;
-    }
-    else
-    {
-        Vo++;
-        So++;
-    }
-    
-}
-
-void Angle(int32_t Gb)
-{
-    //Gb -= Offsetptr;
-    if(theta > 360)
-    {
-        theta = 0;
-    }
-    G = ((float)Gb)/16.4;
-    theta = theta + G*sampling_time;
-    printf("Gyro: %f en grados/s \r\n", G);
-    printf("Ángulo final: %f en grados \r\n", theta);
-}
-
-
-

@@ -264,6 +264,57 @@ void write_to_rith()
     free(chunk);
 }
 
+void write_to_circ()
+{
+    Block* chunk   =  malloc(sizeof(Block));
+    uint32_t time = 0;
+    if(check_file_exist(CIRC_FILE))
+    {
+        delete_file(CIRC_FILE);
+    }
+    file_open(WRITE, CIRC_FILE);
+    RGB_8_40ms(0,0,2);
+    RGB_8_40ms(0,0,7);
+    RGB_8_40ms(0,0,16);
+    RGB_8_40ms(0,0,34);
+    RGB_8_40ms(0,0,63);
+    RGB_8_40ms(0,0,104);
+    RGB_8_40ms(0,0,154);
+    RGB_8_40ms(0,0,204);
+    RGB_8_40ms(0,1,241);
+    RGB_8_40ms(0,4,255);
+    RGB_8_40ms(0,11,242);
+    RGB_8_40ms(0,24,204);
+    RGB_8_40ms(0,48,155);
+    RGB_8_40ms(0,83,104);
+    RGB_8_40ms(0,130,63);
+    RGB_8_40ms(0,182,34);
+    RGB_8_40ms(1,226,16);
+    RGB_8_40ms(3,252,7);
+    RGB_8_40ms(7,251,2);
+    RGB_8_40ms(17,224,0);
+    RGB_8_40ms(36,178,0);
+    RGB_8_40ms(66,127,0);
+    RGB_8_40ms(107,81,0);
+    RGB_8_40ms(157,46,0);
+    RGB_8_40ms(207,23,0);
+    RGB_8_40ms(243,10,0);
+    RGB_8_40ms(255,4,0);
+    RGB_8_40ms(241,1,0);
+    RGB_8_40ms(203,0,0);
+    RGB_8_40ms(154,0,0);
+    RGB_8_40ms(104,0,0);
+    RGB_8_40ms(63,0,0);
+    RGB_8_40ms(34,0,0);
+    RGB_8_40ms(16,0,0);
+    RGB_8_40ms(7,0,0);
+    RGB_8_40ms(2,0,0);
+    close_file();
+    printf("write end\r\n");
+    free(chunk);
+}
+
+
 #define write_me
 void write_to_idle()
 {

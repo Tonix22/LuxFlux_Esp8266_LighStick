@@ -123,6 +123,13 @@ void Light_task(void* arg )
                 LedStick->Led_stick_off();
                 vTaskDelay(10/ portTICK_RATE_MS);
                 LedStick->Led_stick_off();
+            case CIRC_LOAD:
+                imu_comm = IMU_ACK;
+                Generate_Circular_Angles(LedStick->sequence);
+                xQueueSend(imu_light_queue, &imu_comm, 100);
+
+                break;
+
             default:
                 break;
             }
