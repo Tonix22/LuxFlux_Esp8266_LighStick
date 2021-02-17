@@ -1,0 +1,49 @@
+menu "LuxFluxConfig"
+
+choice WIFI
+    prompt "WIFI SELECT"
+    default RIGHT_STICK
+
+    config RIGHT_STICK
+        bool "RIGHT_STICK"
+        help
+            Do nothing and "SSL_ASSERT" does not work.
+
+    config LEFT_STICK
+        bool "RIGHT_STICK"
+        help
+            Enable assert exiting, it will check and return error code.
+
+    config WIFI_HOME
+        bool "WIFI_HOME"
+        help
+            Enable assert exiting, it will check and return error code.
+
+endchoice
+
+config PORT
+    int "TCP Server PORT"
+    default 3333
+
+config LAP_IP
+    string "LAP_IP"
+    default "192.168.201.232"
+
+config LEFT_STICK_IP
+    string "LEFT_STICK_IP"
+    default "192.168.4.1"
+
+config RIGHT_STICK_IP
+    string "RIGHT_STICK_IP"
+    default "192.168.5.1"
+    
+config WIFI_HOME_SSID
+    string "SSID"
+    default "DEPTO_201"
+
+config WIFI_HOME_PASS
+    string "PASS"
+    default "sxk!0363"
+
+
+endmenu
