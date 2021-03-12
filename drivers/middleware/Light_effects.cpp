@@ -9,7 +9,7 @@
 #include "imu6050.h"
 #include "memory_admin.h"
 #include "driver/hw_timer.h"
-
+#include "tcp_server.h"
 
 // =============================================================================
 // Class
@@ -28,6 +28,7 @@ extern EventGroupHandle_t Menu_status;
 // =============================================================================
 
 extern xQueueHandle imu_light_queue;
+extern xQueueHandle tcp_light_event;
 xQueueHandle Light_event = NULL;
 
 // =============================================================================
@@ -67,6 +68,7 @@ void Light_task(void* arg )
     /* Task comunication tools*/
     Light_MessageID light_queue;
     IMU_msgID imu_comm;
+    TCP_msgID tcp_comm;
 
     // Locate resources
     LedStick         = new Light(8); ///8 pixels
@@ -129,6 +131,19 @@ void Light_task(void* arg )
                 xQueueSend(imu_light_queue, &imu_comm, 100);
 
                 break;
+            case TCP_LOAD:
+                
+                do
+                {
+                    Flash_color(0,0,255,500);
+                    xQueueReceive(Light_event, &light_queue, 0);
+                } while (light_queue!=OFF);  
+                LedStick->Led_stick_off();
+                break;
+            case TCP_SYNC:
+
+                break;
+            
 
             default:
                 break;

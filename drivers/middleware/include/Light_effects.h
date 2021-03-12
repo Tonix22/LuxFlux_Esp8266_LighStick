@@ -31,6 +31,8 @@ extern "C"
         OFF,
         LOAD_EFFECTS,
         CIRC_LOAD,
+        TCP_LOAD,
+        TCP_SYNC
     }Light_MessageID;
 
     // =============================================================================

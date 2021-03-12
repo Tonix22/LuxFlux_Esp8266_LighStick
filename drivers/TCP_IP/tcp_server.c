@@ -31,6 +31,7 @@
 #include "tcp_server.h"
 #include "file_system.h"
 #include "memory_admin.h"
+#include "Light_effects.h"
 
 
 // =============================================================================
@@ -45,7 +46,7 @@
 // =============================================================================
 
     extern char  File_names[MAX_features][MAX_NAME_SIZE];
-
+    extern xQueueHandle Light_event;
 // =============================================================================
 // LOCAL VARIABLES
 // =============================================================================
@@ -53,6 +54,8 @@
     char rx_buffer [MAX_SIZE];
     char tempbuff [MAX_SIZE];
     int len = 0;
+
+    xQueueHandle tcp_light_event;
 
 void filter_clr_cls()
 {
@@ -145,7 +148,10 @@ void sync_func(int*sock){
                 sprintf(tempbuff,"%d\n",frame_time);
                 strcat(rx_buffer,tempbuff);
                 printf("To client: %s\r\n",rx_buffer);
+                //Chunk send
                 message_response(sock,rx_buffer);
+                //TODO QueueSend SYNC fade()
+
                 memset(rx_buffer,0,MAX_SIZE);// flush buffer
                 recv(*sock, rx_buffer, sizeof(rx_buffer),0);
                 printf("From client: %s \r\n", rx_buffer); 
@@ -295,7 +301,15 @@ static void tcp_server_task(void *pvParameters)
     int  ip_protocol;
     struct sockaddr_in sourceAddr;
     uint8_t addrLen = sizeof(sourceAddr);
+    uint32_t tcp_to_led_msg = 0;
+    tcp_light_event = xQueueCreate(10, sizeof(uint32_t));
     
+    //TODO QueueSend flash()
+    tcp_to_led_msg = TCP_LOAD;
+    if(!xQueueSend(Light_event, &tcp_to_led_msg, 0)){                
+        printf(" message failed 2\r\n");    
+    }
+
 
     while (1) {
 
@@ -337,6 +351,8 @@ static void tcp_server_task(void *pvParameters)
         }
         ESP_LOGI(TAG, "Socket listening");
 
+        
+
 
         // =============================================================================
         // 4. Socket Accept
@@ -348,9 +364,24 @@ static void tcp_server_task(void *pvParameters)
         }
         ESP_LOGI(TAG, "Socket accepted");
 
+
+
+        //TODO QueueSend OFF
+        tcp_to_led_msg = OFF;
+        if(!xQueueSend(Light_event, &tcp_to_led_msg, 0)){                
+            printf(" message failed 2\r\n");    
+        }
+        
+        
         comunication(&sock);
         //This line of code will be reached once the communication is over
 
+        //TODO QueueSend OFF
+        tcp_to_led_msg = OFF;
+        if(!xQueueSend(Light_event, &tcp_to_led_msg, 0)){                
+            printf(" message failed 2\r\n");    
+        }
+        
         
         ESP_LOGI(TAG, "Shutting down socket and restarting...");
         shutdown(sock, 0);
