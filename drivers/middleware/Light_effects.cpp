@@ -139,8 +139,18 @@ void Light_task(void* arg )
                     xQueueReceive(Light_event, &light_queue, 0);
                 } while (light_queue!=OFF);  
                 LedStick->Led_stick_off();
+                load_calib_colors = true;
                 break;
             case TCP_SYNC:
+              if(load_calib_colors == true)
+                {
+                    load_calib_colors = false;
+                    LedStick->Fade_colors[0] = {0, 0 , 0};
+                    LedStick->Fade_colors[1] = {0, 0, 255};
+                }
+                Fade_color();
+                tcp_comm = TCP_ACK;
+                xQueueSend(tcp_light_event, &tcp_comm, 100);
 
                 break;
             

@@ -54,6 +54,7 @@
     char rx_buffer [MAX_SIZE];
     char tempbuff [MAX_SIZE];
     int len = 0;
+    uint32_t tcp_to_led_msg = 0;
 
     xQueueHandle tcp_light_event;
 
@@ -148,10 +149,15 @@ void sync_func(int*sock){
                 sprintf(tempbuff,"%d\n",frame_time);
                 strcat(rx_buffer,tempbuff);
                 printf("To client: %s\r\n",rx_buffer);
+
+                //TODO QueueSend SYNC fade()
+                tcp_to_led_msg = TCP_SYNC;
+                if(!xQueueSend(Light_event, &tcp_to_led_msg, 0)){                
+                     printf(" message failed 2\r\n");    
+                 }
+                 
                 //Chunk send
                 message_response(sock,rx_buffer);
-                //TODO QueueSend SYNC fade()
-
                 memset(rx_buffer,0,MAX_SIZE);// flush buffer
                 recv(*sock, rx_buffer, sizeof(rx_buffer),0);
                 printf("From client: %s \r\n", rx_buffer); 
@@ -159,7 +165,10 @@ void sync_func(int*sock){
                 pixels_cnt = 0;
                 memset(tempbuff,0,MAX_SIZE);// flush buffer
                 memset(rx_buffer,0,MAX_SIZE);// flush buffer
+
+                xQueueReceive(tcp_light_event, &tcp_to_led_msg, portMAX_DELAY);//TCP_ACK light event
             }
+
             message_response(sock,"EOF\n");
             close_file();
         }
@@ -301,7 +310,6 @@ static void tcp_server_task(void *pvParameters)
     int  ip_protocol;
     struct sockaddr_in sourceAddr;
     uint8_t addrLen = sizeof(sourceAddr);
-    uint32_t tcp_to_led_msg = 0;
     tcp_light_event = xQueueCreate(10, sizeof(uint32_t));
     
     //TODO QueueSend flash()
