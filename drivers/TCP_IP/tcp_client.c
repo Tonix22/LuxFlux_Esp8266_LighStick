@@ -107,10 +107,10 @@ static void tcp_client_task(void *pvParameters)
     tcp_light_event = xQueueCreate(10, sizeof(uint32_t));
 
     //TODO QueueSend flash()
-   /* tcpclient_to_led_msg = TCP_LOAD;
+    tcpclient_to_led_msg = TCP_LOAD;
     if(!xQueueSend(Light_event, &tcpclient_to_led_msg, 0)){                
         printf(" message failed 2\r\n");    
-    }*/
+    }
 
     while (1) {
         struct sockaddr_in destAddr;
@@ -165,10 +165,10 @@ static void tcp_client_task(void *pvParameters)
         }
 
          //TODO QueueSend OFF
-       /* tcpclient_to_led_msg = OFF;
+        tcpclient_to_led_msg = OFF;
         if(!xQueueSend(Light_event, &tcpclient_to_led_msg, 0)){                
             printf(" message failed 2\r\n");    
-        }*/
+        }
 
 
         // =============================================================================
@@ -246,7 +246,7 @@ static void tcp_client_task(void *pvParameters)
                     //PARSE THE CHUNK
                     parse_chunk(rx_buffer);
                     send_msg("ACK\n");
-                    /*
+                    
                     //TODO QueueSend SYNC fade()
                     tcpclient_to_led_msg = TCP_SYNC;
                     if(!xQueueSend(Light_event, &tcpclient_to_led_msg, 0)){                
@@ -254,7 +254,7 @@ static void tcp_client_task(void *pvParameters)
                     }                    
 
                     //TODO RECEIVE ACK
-                     xQueueReceive(tcp_light_event, &tcpclient_to_led_msg, portMAX_DELAY);//TCP_ACK light event*/
+                     xQueueReceive(tcp_light_event, &tcpclient_to_led_msg, portMAX_DELAY);//TCP_ACK light event
                 }
             }
                close_file();
