@@ -150,8 +150,11 @@ void Light_task(void* arg )
                 }
                 Fade_color();
                 tcp_comm = TCP_ACK;
-                xQueueSend(tcp_light_event, &tcp_comm, 100);
-
+                
+                if(!xQueueSend(tcp_light_event, &tcp_comm, 0)){
+                    printf(" message failed 2\r\n"); 
+                }
+                
                 break;
             
 
