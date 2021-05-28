@@ -34,6 +34,10 @@
 #include "memory_admin.h"
 #include "tcp_server.h"
 #include "Light_effects.h"
+// =============================================================================
+// Defines
+// =============================================================================
+#define MAX_CNT_CLIENT 5
 
 // =============================================================================
 // External variables
@@ -50,6 +54,7 @@ static const char *TAG = "example";
 char *payload = "Message from ESP32 ";
 int sock;
 uint32_t tcpclient_to_led_msg = 0;
+int cnt_client = 0; //chunk counter to reduce fade velocity
 
 /**
  * @brief Function to send message to server
@@ -106,7 +111,7 @@ static void tcp_client_task(void *pvParameters)
     int trys = 0;
     tcp_light_event = xQueueCreate(10, sizeof(uint32_t));
 
-    //TODO QueueSend flash()
+    
     tcpclient_to_led_msg = TCP_LOAD;
     if(!xQueueSend(Light_event, &tcpclient_to_led_msg, 0)){                
         printf(" message failed 2\r\n");    
@@ -164,7 +169,7 @@ static void tcp_client_task(void *pvParameters)
             esp_restart();
         }
 
-         //TODO QueueSend OFF
+         
         tcpclient_to_led_msg = OFF;
         if(!xQueueSend(Light_event, &tcpclient_to_led_msg, 0)){                
             printf(" message failed 2\r\n");    
@@ -246,15 +251,19 @@ static void tcp_client_task(void *pvParameters)
                     //PARSE THE CHUNK
                     parse_chunk(rx_buffer);
                     send_msg("ACK\n");
-                    
-                    //TODO QueueSend SYNC fade()
-                    tcpclient_to_led_msg = TCP_SYNC;
-                    if(!xQueueSend(Light_event, &tcpclient_to_led_msg, 0)){                
-                         printf(" message failed 2\r\n");    
-                    }                    
 
-                    //TODO RECEIVE ACK
-                     xQueueReceive(tcp_light_event, &tcpclient_to_led_msg, portMAX_DELAY);//TCP_ACK light event
+                    
+                    //TODO slower fade
+                    cnt_client++;
+                    if(cnt_client == MAX_CNT_CLIENT){
+                        cnt_client = 0;
+                        tcpclient_to_led_msg = TCP_SYNC;
+                        if(!xQueueSend(Light_event, &tcpclient_to_led_msg, 0)){                
+                             printf(" message failed 2\r\n");    
+                        }                    
+                         xQueueReceive(tcp_light_event, &tcpclient_to_led_msg, portMAX_DELAY);//TCP_ACK light event
+
+                    }
                 }
             }
                close_file();
@@ -262,12 +271,6 @@ static void tcp_client_task(void *pvParameters)
             vTaskDelay(500 / portTICK_PERIOD_MS);
         }
 
-        //TODO QueueSend OFF
-      /*  tcpclient_to_led_msg = OFF;
-        if(!xQueueSend(Light_event, &tcpclient_to_led_msg, 0)){                
-            printf(" message failed 2\r\n");    
-        }*/
-        
     
         ESP_LOGI(TAG, "Shutting down socket and restarting...");
         shutdown(sock, 0);

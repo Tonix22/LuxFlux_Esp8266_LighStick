@@ -142,6 +142,7 @@ void Light_task(void* arg )
                 load_calib_colors = true;
                 break;
             case TCP_SYNC:
+                
               if(load_calib_colors == true)
                 {
                     load_calib_colors = false;

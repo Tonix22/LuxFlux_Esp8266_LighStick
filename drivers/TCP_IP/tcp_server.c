@@ -40,6 +40,7 @@
 #define SEND_NACK message_response(&sock,"NACK\n")
 #define SEND_ACK message_response(&sock,"ACK\n")
 #define MAX_SIZE 128
+#define MAX_CNT_SERVER 5
 
 // =============================================================================
 // External VARIABLES
@@ -55,6 +56,7 @@
     char tempbuff [MAX_SIZE];
     int len = 0;
     uint32_t tcp_to_led_msg = 0;
+    int cnt_server = 0;
 
     xQueueHandle tcp_light_event;
 
@@ -150,11 +152,6 @@ void sync_func(int*sock){
                 strcat(rx_buffer,tempbuff);
                 printf("To client: %s\r\n",rx_buffer);
 
-                //TODO QueueSend SYNC fade()
-                tcp_to_led_msg = TCP_SYNC;
-                if(!xQueueSend(Light_event, &tcp_to_led_msg, 0)){                
-                     printf(" message failed 2\r\n");    
-                 }
                  
                 //Chunk send
                 message_response(sock,rx_buffer);
@@ -166,7 +163,16 @@ void sync_func(int*sock){
                 memset(tempbuff,0,MAX_SIZE);// flush buffer
                 memset(rx_buffer,0,MAX_SIZE);// flush buffer
 
-                xQueueReceive(tcp_light_event, &tcp_to_led_msg, portMAX_DELAY);//TCP_ACK light event
+                //TODO slower fade
+                cnt_server++;
+                if(cnt_server == MAX_CNT_SERVER){
+                    cnt_server=0;
+                    tcp_to_led_msg = TCP_SYNC;
+                    if(!xQueueSend(Light_event, &tcp_to_led_msg, 0)){                
+                         printf(" message failed 2\r\n");    
+                     }
+                    xQueueReceive(tcp_light_event, &tcp_to_led_msg, portMAX_DELAY);//TCP_ACK light event
+                }
             }
 
             message_response(sock,"EOF\n");
