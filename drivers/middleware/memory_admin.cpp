@@ -153,7 +153,7 @@ bool parse_chunk(char * msg){
     //PRIMER BLOQUE
     ptr = strtok (msg,"(,)");
     
-    while(pixel_cnt < 8){
+    while(pixel_cnt < 8 && ptr!=NULL){
 
         if(isdigit(*ptr)){
 
@@ -171,19 +171,23 @@ bool parse_chunk(char * msg){
 
             write_chunck(group,sizeof(Block),1);
         }else{
+            delete group;
+            ptr = NULL;
             return false;
         }
     }
 
-    delete group;
-    group = NULL;
     if(pixel_cnt != 8){
         return false;
     }
-
     time_frame = atoi(ptr);
-    printf("%d\r\n",time_frame);
+    
+   // printf("%d\r\n",time_frame);
     write_chunck(&time_frame,sizeof(uint32_t),1);
+
+    delete group;
+    ptr = NULL;
+    group = NULL;
     return true;
 }
 

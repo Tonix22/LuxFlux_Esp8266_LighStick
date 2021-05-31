@@ -32,11 +32,19 @@
 #include "tcp_client.h"
 #include "file_system.h"
 #include "memory_admin.h"
+#include "tcp_server.h"
+#include "Light_effects.h"
+// =============================================================================
+// Defines
+// =============================================================================
+#define MAX_CNT_CLIENT 5
 
 // =============================================================================
 // External variables
 // =============================================================================
  extern char  File_names[MAX_features][MAX_NAME_SIZE];
+ extern xQueueHandle Light_event;
+ extern xQueueHandle tcp_light_event;
 
 // =============================================================================
 // Local variables
@@ -45,6 +53,8 @@
 static const char *TAG = "example";
 char *payload = "Message from ESP32 ";
 int sock;
+uint32_t tcpclient_to_led_msg = 0;
+int cnt_client = 0; //chunk counter to reduce fade velocity
 
 /**
  * @brief Function to send message to server
@@ -99,6 +109,14 @@ static void tcp_client_task(void *pvParameters)
     int addr_family;
     int ip_protocol;
     int trys = 0;
+    tcp_light_event = xQueueCreate(10, sizeof(uint32_t));
+
+    
+    tcpclient_to_led_msg = TCP_LOAD;
+    if(!xQueueSend(Light_event, &tcpclient_to_led_msg, 0)){                
+        printf(" message failed 2\r\n");    
+    }
+
     while (1) {
         struct sockaddr_in destAddr;
         destAddr.sin_addr.s_addr = inet_addr(HOST_IP_ADDR);
@@ -151,6 +169,13 @@ static void tcp_client_task(void *pvParameters)
             esp_restart();
         }
 
+         
+        tcpclient_to_led_msg = OFF;
+        if(!xQueueSend(Light_event, &tcpclient_to_led_msg, 0)){                
+            printf(" message failed 2\r\n");    
+        }
+
+
         // =============================================================================
         // 3. Socket Connect
         // =============================================================================
@@ -172,8 +197,9 @@ static void tcp_client_task(void *pvParameters)
         ESP_LOGI(TAG, "BUFFER: %s",rx_buffer );
         
         int tries = 0;
+        
         if(strcmp (rx_buffer, "READY TO SYNC")){
-
+            printf("IF AQUI");
             while(strcmp (rx_buffer, "READY TO SYNC") != 0 && tries < MAX_TRIES){
                 send_msg("NACK\n");
                 len = recv_msg(rx_buffer,sizeof(rx_buffer));
@@ -186,6 +212,7 @@ static void tcp_client_task(void *pvParameters)
                 //printf("Try (%i)\r\n",tries);
             }
         }else{
+            printf("ELSE AQUI");
             send_msg("ACK\n");
         }
 
@@ -212,17 +239,31 @@ static void tcp_client_task(void *pvParameters)
                 len = recv_msg(rx_buffer,sizeof(rx_buffer));
                 if ( len > 0) {
                     memset(rx_buffer+(len-2),0,3);
-                    ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
-                    ESP_LOGI(TAG, "%s", rx_buffer);
+                   // ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
+                   // ESP_LOGI(TAG, "%s", rx_buffer);
 
                     //CHECK IF IS EOF (go to? if EOF)
                     if(strcmp(rx_buffer,"EOF") == 0){
                         break;
                     }
 
+
                     //PARSE THE CHUNK
                     parse_chunk(rx_buffer);
                     send_msg("ACK\n");
+
+                    
+                    //TODO slower fade
+                    cnt_client++;
+                    if(cnt_client == MAX_CNT_CLIENT){
+                        cnt_client = 0;
+                        tcpclient_to_led_msg = TCP_SYNC;
+                        if(!xQueueSend(Light_event, &tcpclient_to_led_msg, 0)){                
+                             printf(" message failed 2\r\n");    
+                        }                    
+                         xQueueReceive(tcp_light_event, &tcpclient_to_led_msg, portMAX_DELAY);//TCP_ACK light event
+
+                    }
                 }
             }
                close_file();
@@ -230,9 +271,8 @@ static void tcp_client_task(void *pvParameters)
             vTaskDelay(500 / portTICK_PERIOD_MS);
         }
 
-
     
-        ESP_LOGE(TAG, "Shutting down socket and restarting...");
+        ESP_LOGI(TAG, "Shutting down socket and restarting...");
         shutdown(sock, 0);
         close(sock);
         
