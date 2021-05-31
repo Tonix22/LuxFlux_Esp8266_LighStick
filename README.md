@@ -9,20 +9,13 @@ Is an interactive Juggling props for Diabolo Sticks. It has the following featur
 *  There could be programmed light sequences from an external app or PC
 * Led sticks could be sync with Wi-Fi. So there is only need to program one led stick and the other one will have the same color sequence.
 
-## IMPORTANT
+# WIKI
 
-This repo works correctly with the following conditions 
-
-+ ESP8266 RTOS SDK commit 9f37d6900f --> master branch
-+ LWIP    commit ffd1059
-+ mbedtls commit 9ef92c55
-+ cJSON   branch v1.7.12
-
-Hardware Design is made on KiCad and uses library from other repo. 
-[Kicad-ESP8266](https://github.com/jdunmire/kicad-ESP8266)
+* Please visit our [WIKI](https://github.com/Tonix22/LuxFlux_Esp8266_LighStick/wiki) for more info.
 
 ----
 ## Developers
-* Emilio Tonix : Tech Lead , hardware desing. 
-* Ruth Solis Velasco : Ledsticks Sync Feature Developer
-* Gisel Jimena Sanchez Salsalar: IMU calibration, movement gestures. 
+* Emilio Tonix : System Architecht, Tech Lead, manager,and hardware desing. 
+* Ruth Solis Velasco : Ledsticks TCP Socket sync feature Developer, Android APP
+* Perla Vanessa Jaime Gaytán: Auxiliar Developer and FOTA
+* Gisel Jimena Sanchez Salsalar: Auxiliar Developer and Tester
