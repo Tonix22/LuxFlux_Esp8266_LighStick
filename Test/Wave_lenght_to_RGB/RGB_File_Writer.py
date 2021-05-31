@@ -15,10 +15,10 @@ elif w < min_val:
 	w = min_val
 
 f = lambda wv,a,b: 256*np.exp(-((2*wv-(a+b))/(b-a))**2)
-#f = lambda wv,a,b: 256*np.exp(-((2*wv-(a+b))/(b-a))**2)
+
 pruebas = np.linspace(min_val-75,max_val+75,frames)
 
-f_rbg = open("../color_patern.txt", "w")
+f_rbg = open("../ESP_TCP_Test/Common/color_patern.txt", "w")
 
 for i in pruebas:
 	R = int(f(i,min_val+2*delta,max_val))
@@ -32,6 +32,5 @@ for i in pruebas:
 	else:
 		f_rbg.write("4("+str(R)+","+str(G)+","+str(B)+")"+",4("+str(R)+","+str(G)+","+str(B)+"),"+time+"\n")
 		print("wvl %5f nm = \(%3d,%3d,%3d\)" % (i,R,G,B))
-
 
 f_rbg.close()
