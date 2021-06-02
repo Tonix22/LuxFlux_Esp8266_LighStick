@@ -13,7 +13,7 @@
 #include "config.h"
 #include "lwip/init.h"
 
-
+QueueHandle_t xQueue1;
 // =============================================================================
 //  VERSION INFO !!!IMPORTANT!!
 // =============================================================================
@@ -27,6 +27,7 @@ This repo works correctly with the following conditions
 + cJSON v1.7.12
 to fix the problem type in your terminal -> git checkout <commit_id>
 **/
+
 void check_version()
 {
     if(strcmp(esp_get_idf_version(),VALID_SYSTEM_VERSION) != 0)
@@ -57,12 +58,41 @@ extern xQueueHandle imu_cntrl_queue;
  * 5. Neopixel Ledstick init
  * 6. IMU driver init.
  */
+void task1(void *pv){
+    unsigned char i = 1;
+    for(;;){
+        
+        printf("Task 1 running\n");
+        vTaskDelay(3000/ portTICK_RATE_MS);
+        xQueueSend(xQueue1, &i, 0);
+    }
+}
 
+void task2(void *pv){
+    unsigned char i = 0;
+    for(;;){
+        xQueueReceive(xQueue1, &i, portMAX_DELAY);
+        printf("Task 2 running\n");
+        //vTaskDelay(3000/ portTICK_RATE_MS);
+        
+    }
+}
 void app_main(void)
 {
     //check_version();//VERSION INFO !!!IMPORTANT!!
-
     esp_set_cpu_freq(ESP_CPU_FREQ_160M); // 1
+    file_system_init(); // 4
+    xQueue1 = xQueueCreate(10, sizeof(char));
+    xTaskCreate(task1, "Task 1", 1024, NULL, 4, NULL);
+    xTaskCreate(task2, "Task 2", 1024, NULL, 4, NULL);
+    
+    for(;;)
+    {
+
+        vTaskDelay(5000/ portTICK_RATE_MS);
+        printf("Hello world!\n");
+    }
+    #if PRODUCT
     // ================================
     // IO config
     // ================================
@@ -72,7 +102,6 @@ void app_main(void)
     // ================================
     // Filse System -> Flash Driver
     // ================================
-    file_system_init(); // 4
    // write_to_rith();//TODO testing purpse
     //write_to_idle();//TODO testing purpse
     // ================================
@@ -99,5 +128,9 @@ void app_main(void)
         Pixel_rainbow();
         #endif
     }
+   #endif
+
+     
+
     
 }
