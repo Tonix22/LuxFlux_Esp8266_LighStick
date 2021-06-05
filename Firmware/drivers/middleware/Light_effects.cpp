@@ -70,6 +70,8 @@ void Light_task(void* arg )
     IMU_msgID imu_comm;
     TCP_msgID tcp_comm;
 
+    test_Vane msg_Vane;
+
     // Locate resources
     LedStick         = new Light(8); ///8 pixels
     Light_event      = xQueueCreate(10, sizeof(uint32_t));
@@ -78,9 +80,9 @@ void Light_task(void* arg )
 
     for(;;)
     {
-        if (xQueueReceive(Light_event, &light_queue, portMAX_DELAY))
+        if (xQueueReceive(Light_event, &msg_Vane, portMAX_DELAY))
         {
-            switch (light_queue)
+            /*switch (light_queue)
             {   
             case SOUND://This message is send from SOUND ISR
                 if(sound_released == true)
@@ -159,11 +161,20 @@ void Light_task(void* arg )
                 
                 break;
             
+               
+            default:
+                break;
+            }*/
+            switch (msg_Vane){   
+            case RAINBOW:
+                Pixel_rainbow();
+                break;
 
             default:
                 break;
-            }
         }
+       test_Vane msg_Vane_end = END;
+       xQueueSend(Light_event, &msg_Vane, portMAX_DELAY);
     }
 }
 
@@ -343,7 +354,7 @@ void Pixel_rainbow_Fade(void)
     }
     vTaskDelay(80/ portTICK_RATE_MS);
 }
-
+*/
 void Pixel_rainbow(void)
 {
    
@@ -382,7 +393,6 @@ void Pixel_rainbow(void)
         vTaskDelay(LedStick->rainbow_delay/ portTICK_RATE_MS);
         LedStick->Fill_Led_stick(red,green,blue);
     }
-}
-*/
+
 
 

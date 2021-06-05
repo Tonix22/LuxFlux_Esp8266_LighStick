@@ -35,6 +35,13 @@ extern "C"
         TCP_SYNC
     }Light_MessageID;
 
+    typedef enum
+    {
+        OFF,
+        RAINBOW,
+        END,
+        ARRAYSIZE
+    }test_Vane;
     // =============================================================================
     // C Visible Function prototypes
     // =============================================================================

@@ -12,6 +12,7 @@
 #include "file_system.h"
 #include "config.h"
 #include "lwip/init.h"
+#include "menu.h"
 
 QueueHandle_t xQueue1;
 // =============================================================================
@@ -58,7 +59,7 @@ extern xQueueHandle imu_cntrl_queue;
  * 5. Neopixel Ledstick init
  * 6. IMU driver init.
  */
-void task1(void *pv){
+/*void task1(void *pv){
     unsigned char i = 1;
     for(;;){
         
@@ -76,21 +77,44 @@ void task2(void *pv){
         //vTaskDelay(3000/ portTICK_RATE_MS);
         
     }
-}
+}*/
+
+
 void app_main(void)
 {
     //check_version();//VERSION INFO !!!IMPORTANT!!
     esp_set_cpu_freq(ESP_CPU_FREQ_160M); // 1
     file_system_init(); // 4
-    xQueue1 = xQueueCreate(10, sizeof(char));
-    xTaskCreate(task1, "Task 1", 1024, NULL, 4, NULL);
-    xTaskCreate(task2, "Task 2", 1024, NULL, 4, NULL);
+    //xQueue1 = xQueueCreate(10, sizeof(char));
+    /*xTaskCreate(task1, "Task 1", 1024, NULL, 4, NULL);
+    xTaskCreate(task2, "Task 2", 1024, NULL, 4, NULL);*/
+    //Testing
+    Ligth_init();       //Creating task
+    test_Vane msg_Vane = RAINBOW;
+    test_Vane msg_end;
+    Light_task();
+   
+
     
     for(;;)
     {
 
-        vTaskDelay(5000/ portTICK_RATE_MS);
-        printf("Hello world!\n");
+        /*vTaskDelay(5000/ portTICK_RATE_MS);
+        printf("Hello world!\n");*/
+        if (xQueueReceive(Light_event, &msg_end, portMAX_DELAY))
+        {
+            switch (msg_end)
+            {   
+            case END:
+                xQueueSend(Light_event, &msg_Vane, 10/ portTICK_RATE_MS);
+            default:
+                break;
+
+        }
+        
+
+
+
     }
     #if PRODUCT
     // ================================
