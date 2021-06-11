@@ -1,0 +1,13 @@
+* C:\users\tonix\My Documents\LuxFlux\hardwareDesign\BoostSimulation.asc
+V1 N001 0 3.3
+D1 N002 N003 D
+L1 N002 N001 22µH
+C1 N003 0 1µF
+V2 N002 0 PULSE(0 3.3 0.1u 1n 1n .685us 1.37us)
+R2 N003 0 100
+.model D D
+.lib C:\users\tonix\My Documents\LTspiceXVII\lib\cmp\standard.dio
+.tran 100ms
+.op
+.backanno
+.end
