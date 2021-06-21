@@ -70,7 +70,7 @@ void Light_task(void* arg )
     IMU_msgID imu_comm;
     TCP_msgID tcp_comm;
 
-    test_Vane msg_Vane;
+    test_Vane msg_Vane, msg_Vane_end;
 
     // Locate resources
     LedStick         = new Light(8); ///8 pixels
@@ -166,15 +166,20 @@ void Light_task(void* arg )
                 break;
             }*/
             switch (msg_Vane){   
-            case RAINBOW:
-                Pixel_rainbow();
-                break;
+                case RAINBOW:
+                    Pixel_rainbow();
+                    break;
 
-            default:
-                break;
+                default:
+                    break;
+            }
+            
+            
         }
-       test_Vane msg_Vane_end = END;
-       xQueueSend(Light_event, &msg_Vane, portMAX_DELAY);
+        else{
+            msg_Vane_end = END;
+            xQueueSend(Light_event, &msg_Vane_end, portMAX_DELAY);
+        }
     }
 }
 
@@ -393,6 +398,6 @@ void Pixel_rainbow(void)
         vTaskDelay(LedStick->rainbow_delay/ portTICK_RATE_MS);
         LedStick->Fill_Led_stick(red,green,blue);
     }
-
+}
 
 

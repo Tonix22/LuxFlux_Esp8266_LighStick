@@ -37,10 +37,8 @@ extern "C"
 
     typedef enum
     {
-        OFF,
         RAINBOW,
-        END,
-        ARRAYSIZE
+        END
     }test_Vane;
     // =============================================================================
     // C Visible Function prototypes

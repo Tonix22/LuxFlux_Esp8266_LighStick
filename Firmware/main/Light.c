@@ -12,7 +12,6 @@
 #include "file_system.h"
 #include "config.h"
 #include "lwip/init.h"
-#include "menu.h"
 
 QueueHandle_t xQueue1;
 // =============================================================================
@@ -92,7 +91,6 @@ void app_main(void)
     Ligth_init();       //Creating task
     test_Vane msg_Vane = RAINBOW;
     test_Vane msg_end;
-    Light_task();
    
 
     
