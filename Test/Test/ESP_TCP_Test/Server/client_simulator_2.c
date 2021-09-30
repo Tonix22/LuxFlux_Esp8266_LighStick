@@ -6,7 +6,7 @@
 #include  <unistd.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include "FileWriter.h"
+#include  "FileWriter.h"
 
 #define MAX 128
 #define PORT 3333
@@ -41,45 +41,28 @@ void func(int sockfd)
 
     bzero(buff, sizeof(buff)); 
 
-    while (send_msg("SYNC\n") < 0) {
+    while (send_msg("APP\n") < 0) {
         usleep(1000000);
     }
     int len = recv_msg(buff,sizeof(buff));
     memset(buff+(len-2),0,3);
     printf("From Server : %s***\n", buff);
 
-    if (strcmp(buff,"READY TO SYNC") != 0){
+    if (strcmp(buff,"READY TO WRITE") != 0){
         send_msg("NACK\n");
         printf("RIP CLIENT :P\n");
         return;
     }else{
         send_msg("ACK\n");
     }
-    
-    int i;
-    for (i=0; i < MAX_features; i++){
-        send_msg(File_names[i]);
-        open_file(File_names[i]);
-        while (1) {
-            memset(buff,0,sizeof(buff)); //flush a rx_buffer
-            //RECEIVE CHUNK :)
-            len = recv_msg(buff,sizeof(buff));
-            if ( len > 0) {
-                memset(buff+(len-1),0,2);
-                printf("Received %s", buff);
+    send_msg("/spiffs/IDLE.bin\n");
+    usleep(1000000);
+    send_msg("4(0,255,255),4(255,0,0),1000\n");
+    usleep(1000000);
+    send_msg("4(255,0,0),4(0,255,255),1000\n");
+    usleep(1000000);
+    send_msg("EOF\n");
 
-                //CHECK IF IS EOF (go to? if EOF)
-                if(strcmp(buff,"EOF") == 0){
-                    break;
-                }
-
-                //PARSE THE CHUNK
-                write_chunk(buff);
-                send_msg("ACK\n");
-            }
-        }
-            close_file();
-    }
 } 
   
 int main() 
@@ -99,7 +82,7 @@ int main()
   
     // assign IP, PORT 
     servaddr.sin_family = AF_INET; 
-    servaddr.sin_addr.s_addr = inet_addr("192.168.0.6"); 
+    servaddr.sin_addr.s_addr = inet_addr("192.168.5.1"); 
     servaddr.sin_port = htons(PORT); 
   
     // connect the client socket to server socket 
@@ -111,7 +94,7 @@ int main()
         printf("connected to the server..\n"); 
   
     // function for chat 
-    //func(sockfd); 
+    func(sockfd); 
   
     // close the socket 
     close(sockfd); 
