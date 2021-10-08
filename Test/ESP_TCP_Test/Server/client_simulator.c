@@ -99,7 +99,7 @@ int main()
   
     // assign IP, PORT 
     servaddr.sin_family = AF_INET; 
-    servaddr.sin_addr.s_addr = inet_addr("192.168.5.1"); 
+    servaddr.sin_addr.s_addr = inet_addr("192.168.201.252"); 
     servaddr.sin_port = htons(PORT); 
   
     // connect the client socket to server socket 
@@ -111,7 +111,7 @@ int main()
         printf("connected to the server..\n"); 
   
     // function for chat 
-    func(sockfd); 
+    //func(sockfd); 
   
     // close the socket 
     close(sockfd); 
