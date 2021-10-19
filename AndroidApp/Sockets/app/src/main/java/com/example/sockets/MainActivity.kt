@@ -2,46 +2,49 @@ package com.example.sockets
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import io.ktor.network.selector.*
+import io.ktor.network.sockets.*
+import io.ktor.utils.io.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import java.net.InetSocketAddress
 
-import android.annotation.SuppressLint;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
-import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
-import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.TextView;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
 
 
 class MainActivity : AppCompatActivity() {
-    ServerSocket serverSocket
-    Thread Thread1 = null
-    TextView tvIP, tvPort
-    TextView tvMessages
-    EditText etMessage
-    Button btnSend
-    public String SERVER_IP = ""
-    public int SERVER_PORT = 3333
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        tvIP   = findViewById(R.id.tvIP)
-        tvPort = findViewById(R.id.tvPort)
-        tvMessages = findViewById(R.id.tvMessages)
-        etMessage = findViewById(R.id.etMessage)
-        btnSend = findViewById(R.id.btnSend)
+
+        GlobalScope.launch(Dispatchers.IO) {
+            val server = aSocket(ActorSelectorManager(Dispatchers.IO)).tcp().bind(InetSocketAddress("0.0.0.0", 3333))
+            //println("Started echo telnet server at ${server.localAddress}")
+
+            while (true) {
+                val socket = server.accept()
+
+                launch(Dispatchers.Main) {
+                    //println("Socket accepted: ${socket.remoteAddress}")
+
+                    val input = socket.openReadChannel()
+                    val output = socket.openWriteChannel(autoFlush = true)
+
+                    try {
+                        while (true) {
+                            val line = input.readUTF8Line(Int.MAX_VALUE)
+                            //println("${socket.remoteAddress}: $line")
+                            output.writeStringUtf8("$line\r\n")
+                        }
+                    } catch (e: Throwable) {
+                        e.printStackTrace()
+                        socket.close()
+                    }
+                }
+            }
+        }
     }
 }
